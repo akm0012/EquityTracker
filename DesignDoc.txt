@@ -1,0 +1,21 @@
+UX - No Config file found
+1. Welcome Message
+2. Ask for Stock TICKER
+3. Validate it's a valid TICKER
+4. Ask how many shares they have
+5. Ask what price those share we acquired at
+6. Do you have any other shares you want to track?
+7. If so repeat 4 - 6
+8. Ask if they want to save this data so they don't need to enter it in next time. Also mention you can enter it as CL arguments.
+9. If yes, save info to some config file. Explain how to change it.
+
+UX - Config file found
+1. Load variables from Config file, explain that it was used and instructions on if they want to change it.
+2. Start main program
+
+UX - Run main program
+1. Check to make sure the market is open?
+2. Open socket to ticker and listen for updates
+3. onUpdate -> caluclate all the things and show it to the screen
+
+UX - Help Command
