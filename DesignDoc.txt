@@ -19,3 +19,9 @@ UX - Run main program
 3. onUpdate -> caluclate all the things and show it to the screen
 
 UX - Help Command
+
+TWTR
+    - 100 shares, $36.50
+    - 200 shares, $50.33
+APPL
+    - 50 shares, $10.33

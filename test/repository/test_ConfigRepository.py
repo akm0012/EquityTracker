@@ -67,6 +67,20 @@ class TestConfigRepository(TestCase):
 
     # endregion
 
+    # region get_finnhub_api_key tests
+
+    def test_get_finnhub_api_key_empty(self):
+        config_repo = ConfigRepository()
+        config_repo.config_file_location = self.__get_path_to_test_file("test_config_7.ini")
+        self.assertEquals(config_repo.get_finnhub_api_key(), "")
+
+    def test_get_finnhub_api_key_normal(self):
+        config_repo = ConfigRepository()
+        config_repo.config_file_location = self.__get_path_to_test_file("test_config_1.ini")
+        self.assertEquals(config_repo.get_finnhub_api_key(), "api_key_test")
+
+    # endregion
+
     def __get_path_to_test_file(self, test_file_name: str) -> str:
         script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
         rel_path = "../test_config_files/" + test_file_name

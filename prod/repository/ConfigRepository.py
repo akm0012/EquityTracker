@@ -1,5 +1,5 @@
 """
-This class is reads/writes the config file.
+This class reads/writes the config file.
 """
 import os
 from os.path import exists
@@ -7,25 +7,17 @@ import configparser
 
 
 class ConfigRepository:
-
-    config_file_location = ""
-
     API_TOKENS_SECTION = "API_TOKENS"
+    FINN_HUB_API_KEY = "FINN_HUB_API_KEY"
     DATABASE_SECTION = "DATABASE"
     NO_KEY = "NO_KEY"
+
+    config_file_location = ""
 
     def __init__(self):
         script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
         rel_path = "../../config.ini"
         self.config_file_location = os.path.join(script_dir, rel_path)
-
-    # todo delete soon
-    def read_ini(self, file_path: str):
-        config = configparser.ConfigParser()
-        config.read(file_path)
-        for section in config.sections():
-            for key in config[section]:
-                print((key, config[section][key]))
 
     def does_config_file_exist(self) -> bool:
         file_exist = exists(self.config_file_location)
@@ -46,12 +38,45 @@ class ConfigRepository:
             return False
 
         # Make sure there is an API Key
-        api_tokens_key = config.get('API_TOKENS', 'FINN_HUB_API_KEY', fallback=self.NO_KEY)
+        api_tokens_key = config.get(self.API_TOKENS_SECTION, self.FINN_HUB_API_KEY, fallback=self.NO_KEY)
         if api_tokens_key == self.NO_KEY:
             return False
 
         return True
 
+    """
+    Creates a config.ini file that looks like this: 
+    ----------
+    [API_TOKENS]
+    finn_hub_api_key = 
+
+    [DATABASE]
+    ----------
+    """
+    def create_empty_config_file(self):
+        config = configparser.ConfigParser()
+
+        config.add_section(self.API_TOKENS_SECTION)
+        config[self.API_TOKENS_SECTION][self.FINN_HUB_API_KEY] = ""
+        config.add_section(self.DATABASE_SECTION)
+
+        with open(self.config_file_location, 'w') as configfile:
+            config.write(configfile)
+
     def get_finnhub_api_key(self) -> str:
-        #todo: Read this from a file instead
-        return ""
+        config = configparser.ConfigParser()
+        config.read(self.config_file_location)
+        return config.get(self.API_TOKENS_SECTION, self.FINN_HUB_API_KEY)
+
+    def write_finnhub_api_key(self, api_key: str):
+        config = configparser.ConfigParser()
+        config.read(self.config_file_location)
+        config[self.API_TOKENS_SECTION][self.FINN_HUB_API_KEY] = api_key
+        with open(self.config_file_location, 'w') as configfile:
+            config.write(configfile)
+
+    def get_stocks(self) -> str:
+        config = configparser.ConfigParser()
+        config.read(self.config_file_location)
+        return config.get(self.API_TOKENS_SECTION, self.FINN_HUB_API_KEY)
+
