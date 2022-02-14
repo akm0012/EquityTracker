@@ -20,8 +20,9 @@ UX - Run main program
 
 UX - Help Command
 
-TWTR
-    - 100 shares, $36.50
-    - 200 shares, $50.33
-APPL
-    - 50 shares, $10.33
+Todo: Stock Repository:
+1. Look up if a Stock Exists
+2. Learn how Sockets work
+
+Needed to run:
+pip install requests 
