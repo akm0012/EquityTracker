@@ -77,7 +77,7 @@ class ConfigRepository:
         config.read(self.config_file_location)
         return config.get(self.API_TOKENS_SECTION, self.FINN_HUB_API_KEY)
 
-    def write_finnhub_api_key(self, api_key: str):
+    def save_finnhub_api_key(self, api_key: str):
         config = configparser.ConfigParser()
         config.read(self.config_file_location)
         config[self.API_TOKENS_SECTION][self.FINN_HUB_API_KEY] = api_key
@@ -98,3 +98,19 @@ class ConfigRepository:
             stock_portfolio.add_stock_grant(stock_grant)
 
         return stock_portfolio
+
+    def save_stock_portfolio(self, portfolio: StockPortfolio):
+        # If the config file is not there, create one
+        if not self.does_config_file_exist():
+            self.create_empty_config_file()
+
+        config = configparser.ConfigParser()
+        config.read(self.config_file_location)
+
+        stock_grants = portfolio.get_all_stock_grants()
+        for index, grant in enumerate(stock_grants, start=1):
+            config[self.DATABASE_SECTION][f'STOCK_{index}'] = grant.get_config_ini_str()
+
+        with open(self.config_file_location, 'w') as configfile:
+            config.write(configfile)
+

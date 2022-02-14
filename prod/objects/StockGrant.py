@@ -23,3 +23,12 @@ class StockGrant:
         price = float(components[2])
 
         return StockGrant(ticker, count, price)
+
+    """
+        Creates a config.ini string from the Stock Grant. 
+
+        I.E. ticker = TWTR, count = 100, price = $36.50 -> "TWTR,100,36.50"  
+    """
+    def get_config_ini_str(self) -> str:
+        price_str = format(self.price, '.2f')
+        return f'{self.ticker.upper()},{self.count},{price_str}'
