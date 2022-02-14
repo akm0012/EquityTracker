@@ -1,6 +1,8 @@
 import os
 from unittest import TestCase
 
+from prod.objects.StockGrant import StockGrant
+from prod.objects.StockPortfolio import StockPortfolio
 from prod.repository.ConfigRepository import ConfigRepository
 
 
@@ -128,6 +130,57 @@ class TestConfigRepository(TestCase):
         self.assertEqual(appl_stock_grants.stock_grant_list[0].ticker, "APPL")
         self.assertEqual(appl_stock_grants.stock_grant_list[0].count, 50)
         self.assertEqual(appl_stock_grants.stock_grant_list[0].price, 100.50)
+
+    # endregion
+
+    # region Integration Tests
+
+    def test_full_creation_0(self):
+        config_repo = ConfigRepository()
+        config_repo.config_file_location = self.__get_path_to_test_file("full_creation_1.ini")
+
+        # Delete the file if it's there!
+        config_repo.delete_config_file()
+
+        # Create 3 stocks
+        stock_grant_1 = StockGrant("APPL", 60, 200.50)
+        stock_grant_2 = StockGrant("TWTR", 600, 66.50)
+        stock_grant_3 = StockGrant("TWTR", 700, 70.50)
+
+        # Add the Stocks to a Portfolio
+        portfolio = StockPortfolio()
+        portfolio.add_stock_grant(stock_grant_1)
+        portfolio.add_stock_grant(stock_grant_2)
+        portfolio.add_stock_grant(stock_grant_3)
+
+        # Sanity check Portfolio
+        self.assertEqual(len(portfolio.stock_grant_collection_dict), 2)
+
+        # Write the portfolio to a config file
+        config_repo.save_stock_portfolio(portfolio)
+
+        # Read them into a new Portfolio
+        portfolio2 = config_repo.get_stock_portfolio()
+
+        portfolio2_stock_list = portfolio2.get_all_stock_grants()
+        portfolio2_stock_1 = portfolio2_stock_list[0]
+        portfolio2_stock_2 = portfolio2_stock_list[1]
+        portfolio2_stock_3 = portfolio2_stock_list[2]
+
+        # Make sure they all the data is correct
+        self.assertEqual(stock_grant_1.ticker, portfolio2_stock_1.ticker)
+        self.assertEqual(stock_grant_1.count, portfolio2_stock_1.count)
+        self.assertEqual(stock_grant_1.price, portfolio2_stock_1.price)
+
+        self.assertEqual(stock_grant_2.ticker, portfolio2_stock_2.ticker)
+        self.assertEqual(stock_grant_2.count, portfolio2_stock_2.count)
+        self.assertEqual(stock_grant_2.price, portfolio2_stock_2.price)
+
+        self.assertEqual(stock_grant_3.ticker, portfolio2_stock_3.ticker)
+        self.assertEqual(stock_grant_3.count, portfolio2_stock_3.count)
+        self.assertEqual(stock_grant_3.price, portfolio2_stock_3.price)
+
+        config_repo.delete_config_file()
 
     # endregion
 
