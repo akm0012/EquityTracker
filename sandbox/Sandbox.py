@@ -19,13 +19,28 @@ configRepo = ConfigRepository()
 # is_config_file_valid = configRepo.is_config_file_valid()
 # print("Is config valid: " + str(is_config_file_valid))
 # configRepo.write_finnhub_api_key("Woohoo!")
-configRepo.create_empty_config_file()
+# configRepo.create_empty_config_file()
+
+port = configRepo.get_stock_portfolio()
 
 stock_grant_1 = StockGrant("appl", 10, 100.50)
 stock_grant_2 = StockGrant("twtr", 100, 36.50)
 stock_grant_3 = StockGrant("twtr", 200, 50.50)
 
+
+
+dict = {}
+dict["twtr"] = StockGrantCollection("twtr")
+twtrGrantCollection = dict.get("twtr")
+twtrGrantCollection.add_stock_grant(stock_grant_1)
+twtrGrantCollection.add_stock_grant(stock_grant_2)
+dict["twtr"] = twtrGrantCollection
+
 portfolio = StockPortfolio()
+
+portfolio.add_stock_grant(stock_grant_1)
+portfolio.add_stock_grant(stock_grant_2)
+portfolio.add_stock_grant(stock_grant_3)
 
 twtr_stock_grant_collection = StockGrantCollection("twtr")
 twtr_stock_grant_collection.add_stock_grant(stock_grant_2)
@@ -34,8 +49,8 @@ twtr_stock_grant_collection.add_stock_grant(stock_grant_3)
 appl_stock_grant_collection = StockGrantCollection("appl")
 appl_stock_grant_collection.add_stock_grant(stock_grant_1)
 
-portfolio.add_stock_grant_collection(twtr_stock_grant_collection)
-portfolio.add_stock_grant_collection(appl_stock_grant_collection)
+# portfolio.add_stock_grant_collection(twtr_stock_grant_collection)
+# portfolio.add_stock_grant_collection(appl_stock_grant_collection)
 
 print(portfolio)
 
