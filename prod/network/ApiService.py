@@ -31,7 +31,7 @@ class ApiService:
 
         return stock_info
 
-    def listen_for_stock_updates(self, ticker_list: [], stock_update_callback):
+    def listen_for_stock_updates(self, ticker_list: [str], stock_update_callback):
         websocket.enableTrace(False)
         web_socket = websocket.WebSocketApp(f"wss://ws.finnhub.io?token={ConfigRepository().get_finnhub_api_key()}",
                                             on_open=lambda ws: self.__on_open__(ws, ticker_list),
@@ -42,7 +42,7 @@ class ApiService:
         web_socket.run_forever()
 
     @staticmethod
-    def __on_open__(ws, ticker_list: []):
+    def __on_open__(ws, ticker_list: [str]):
         for ticker in ticker_list:
             ws.send(f'{{"type":"subscribe","symbol":"{ticker}"}}')
 

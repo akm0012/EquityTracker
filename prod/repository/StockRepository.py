@@ -24,7 +24,7 @@ class StockRepository:
     It will first get the current price and send that back as an initial update, then socket will take over 
     and will send back updates as they are available. 
     """
-    def listen_for_stock_price_updates(self, ticker_list: [], price_callback):
+    def listen_for_stock_price_updates(self, ticker_list: [str], price_callback):
         # First, get a starting price for all the tickers interested
         for ticker in ticker_list:
             stock_info = self.api_service.get_stock(ticker)

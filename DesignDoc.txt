@@ -25,7 +25,13 @@ pip install requests
 pip install websocket-client  - https://pypi.org/project/websocket-client/
 
 Sample UX Ideas:
-Senario: Grant 1: $100,000, Grant 2: ~$16,000
+Senario:
+Current Price: $60
+Grant 1: $100,000 @ $50
+Grant 2: $10,000  @ $10
+
+        Current          Grant 1             Grant 2             Total
+TWTR    $60.00  (2.4%)   $50,000 (-50.5%)    $20,000 (+23.3%)    $70,000 (-36.3%)
 
         Current          Grant 1             Grant 2             Total
 TWTR    $36.23  (2.4%)   $50,000 (-50.5%)    $20,000 (+23.3%)    $70,000 (-36.3%)
