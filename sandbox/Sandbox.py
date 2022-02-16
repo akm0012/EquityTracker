@@ -6,7 +6,9 @@ from prod.objects.StockGrantCollection import StockGrantCollection
 from prod.objects.StockPortfolio import StockPortfolio
 from prod.repository.ConfigRepository import ConfigRepository
 
+ticker = "appl"
 print("Hello World!")
+print(f'{{"type":"subscribe","symbol":"{ticker}"}}')
 print('Number of arguments:', len(sys.argv), 'arguments.')
 print('Argument List:', str(sys.argv))
 

@@ -1,5 +1,7 @@
 import requests
+import websocket
 
+from prod.objects.LiveStockInfo import LiveStockInfo
 from prod.objects.StockInfo import StockInfo
 from prod.repository.ConfigRepository import ConfigRepository
 
@@ -9,7 +11,6 @@ class UnknownStockError(Exception):
 
 
 class ApiService:
-
     config_repo: ConfigRepository
 
     def __init__(self, config_repo: ConfigRepository):
@@ -29,3 +30,32 @@ class ApiService:
 
         return stock_info
 
+    def listen_for_stock_updates(self, ticker_list: [], stock_update_callback):
+        websocket.enableTrace(True)
+        web_socket = websocket.WebSocketApp(f"wss://ws.finnhub.io?token={ConfigRepository().get_finnhub_api_key()}",
+                                            on_open=lambda ws: self.__on_open__(ws, ticker_list),
+                                            on_message=lambda ws, message: self.__on_web_socket_message__(ws, message, stock_update_callback),
+                                            on_error=lambda ws, error: self.__on_web_socket_error__(ws, error),
+                                            on_close=lambda ws: self.__on_close__(ws))
+
+        web_socket.run_forever()
+
+    @staticmethod
+    def __on_open__(ws, ticker_list: []):
+        for ticker in ticker_list:
+            ws.send(f'{{"type":"subscribe","symbol":"{ticker}"}}')
+
+    @staticmethod
+    def __on_web_socket_message__(ws, message, callback):
+        #todo Make a Stock Live Update with message
+        # live_stock_update = LiveStockInfo("TWTR", message)
+        mock_stock_update = LiveStockInfo("TWTR", 36.50, 1234567890)
+        callback(mock_stock_update)
+
+    @staticmethod
+    def __on_web_socket_error__(ws, error):
+        print(error)
+
+    @staticmethod
+    def __on_close__(ws):
+        print("### closed ###")

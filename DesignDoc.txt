@@ -25,4 +25,5 @@ Todo: Stock Repository:
 2. Learn how Sockets work
 
 Needed to run:
-pip install requests 
+pip install requests
+pip install websocket-client  - https://pypi.org/project/websocket-client/
