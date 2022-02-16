@@ -17,6 +17,7 @@ class ApiService:
         self.config_repo = config_repo
 
     def get_stock(self, ticker: str) -> StockInfo:
+        ticker = ticker.upper()
         url = f"https://finnhub.io/api/v1/quote?symbol={ticker}"
         param = {"symbol": ticker}
         headers = {"X-Finnhub-Token": self.config_repo.get_finnhub_api_key()}
@@ -31,7 +32,7 @@ class ApiService:
         return stock_info
 
     def listen_for_stock_updates(self, ticker_list: [], stock_update_callback):
-        websocket.enableTrace(True)
+        websocket.enableTrace(False)
         web_socket = websocket.WebSocketApp(f"wss://ws.finnhub.io?token={ConfigRepository().get_finnhub_api_key()}",
                                             on_open=lambda ws: self.__on_open__(ws, ticker_list),
                                             on_message=lambda ws, message: self.__on_web_socket_message__(ws, message, stock_update_callback),

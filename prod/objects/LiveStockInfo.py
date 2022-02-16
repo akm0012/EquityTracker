@@ -1,3 +1,6 @@
+from prod.objects.StockInfo import StockInfo
+import time
+
 class LiveStockInfo:
 
     ticker = ""
@@ -14,7 +17,9 @@ class LiveStockInfo:
         self.current_price = price
         self.updated_at_milli = time
 
+    @staticmethod
+    def map_from_stock_info(stock_info: StockInfo):
+        return LiveStockInfo(stock_info.ticker, stock_info.current_price, int(round(time.time() * 1000)))
+
     def __str__(self) -> str:
-        return f'{self.ticker}\n' \
-               f'Current: {self.current_price}\n' \
-               f'Updated at: {self.updated_at_milli} millis'
+        return f'[{self.ticker}: ${self.current_price} at {self.updated_at_milli} millis]'

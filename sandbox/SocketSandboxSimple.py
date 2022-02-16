@@ -3,6 +3,7 @@ import websocket
 from prod.network.ApiService import ApiService
 from prod.objects.LiveStockInfo import LiveStockInfo
 from prod.repository.ConfigRepository import ConfigRepository
+from prod.repository.StockRepository import StockRepository
 
 
 def process_stock_update(live_stock_update: LiveStockInfo):
@@ -11,5 +12,8 @@ def process_stock_update(live_stock_update: LiveStockInfo):
 
 
 if __name__ == "__main__":
-    ApiService(ConfigRepository()).listen_for_stock_updates(["twtr", "aapl"], lambda update: process_stock_update(update))
+    stock_repo = StockRepository(ApiService(ConfigRepository()))
+    print(stock_repo.listen_for_stock_price_updates(["twtr", "aapl"], lambda live_stock_update: print(live_stock_update)))
+
+    # ApiService(ConfigRepository()).listen_for_stock_updates(["twtr", "aapl"], lambda update: process_stock_update(update))
 

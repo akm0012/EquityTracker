@@ -20,10 +20,13 @@ UX - Run main program
 
 UX - Help Command
 
-Todo: Stock Repository:
-1. Look up if a Stock Exists
-2. Learn how Sockets work
-
 Needed to run:
 pip install requests
 pip install websocket-client  - https://pypi.org/project/websocket-client/
+
+Sample UX Ideas:
+Senario: Grant 1: $100,000, Grant 2: ~$16,000
+
+        Current          Grant 1             Grant 2             Total
+TWTR    $36.23  (2.4%)   $50,000 (-50.5%)    $20,000 (+23.3%)    $70,000 (-36.3%)
+SPY     $446.10 (3.5%)

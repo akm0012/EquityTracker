@@ -1,14 +1,15 @@
 import os
 import sys
-from prod.Colors import TextStyles
+from prod.util.Colors import TextStyles
 from prod.objects.StockGrant import StockGrant
-from prod.objects.StockGrantCollection import StockGrantCollection
 from prod.objects.StockPortfolio import StockPortfolio
 from prod.repository.ConfigRepository import ConfigRepository
 
-ticker = "appl"
+# stock_repo = StockRepository(ApiService(ConfigRepository()))
+# print (stock_repo.listen_for_stock_price_updates(["twtr"], lambda live_stock_update: print(live_stock_update)))
+
 print("Hello World!")
-print(f'{{"type":"subscribe","symbol":"{ticker}"}}')
+# print(f'{{"type":"subscribe","symbol":"{ticker}"}}')
 print('Number of arguments:', len(sys.argv), 'arguments.')
 print('Argument List:', str(sys.argv))
 
