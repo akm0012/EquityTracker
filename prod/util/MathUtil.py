@@ -1,10 +1,6 @@
 from prod.objects.StockGrant import StockGrant
 
 
-def test_abc(x, y):
-    return x + y
-
-
 """
 Calculates the difference in percent of two numbers. 
 IE: 50 -> 100 = 100%

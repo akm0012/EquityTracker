@@ -36,3 +36,5 @@ TWTR    $60.00  (2.4%)   $50,000 (-50.5%)    $20,000 (+23.3%)    $70,000 (-36.3%
         Current          Grant 1             Grant 2             Total
 TWTR    $36.23  (2.4%)   $50,000 (-50.5%)    $20,000 (+23.3%)    $70,000 (-36.3%)
 SPY     $446.10 (3.5%)
+
+** Prob want a window per row, so I only need to update rows with updates

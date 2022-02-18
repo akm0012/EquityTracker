@@ -1,9 +1,11 @@
 import requests
 import websocket
+import json
 
 from prod.objects.LiveStockInfo import LiveStockInfo
 from prod.objects.StockInfo import StockInfo
 from prod.repository.ConfigRepository import ConfigRepository
+from prod.util.LogUtil import log
 
 
 class UnknownStockError(Exception):
@@ -31,32 +33,40 @@ class ApiService:
 
         return stock_info
 
-    def listen_for_stock_updates(self, ticker_list: [str], stock_update_callback):
+    def listen_for_stock_updates(self, ticker_list: [str], yesterday_price_dict: {}, stock_update_callback):
         websocket.enableTrace(False)
         web_socket = websocket.WebSocketApp(f"wss://ws.finnhub.io?token={ConfigRepository().get_finnhub_api_key()}",
                                             on_open=lambda ws: self.__on_open__(ws, ticker_list),
-                                            on_message=lambda ws, message: self.__on_web_socket_message__(ws, message, stock_update_callback),
+                                            on_message=lambda ws, message: self.__on_web_socket_message__(ws, message, yesterday_price_dict, stock_update_callback),
                                             on_error=lambda ws, error: self.__on_web_socket_error__(ws, error),
-                                            on_close=lambda ws: self.__on_close__(ws))
+                                            on_close=lambda ws, close_status_code, close_msg: self.__on_close__(ws, close_status_code, close_msg))
 
         web_socket.run_forever()
 
     @staticmethod
     def __on_open__(ws, ticker_list: [str]):
         for ticker in ticker_list:
-            ws.send(f'{{"type":"subscribe","symbol":"{ticker}"}}')
+            ws.send(f'{{"type":"subscribe","symbol":"{ticker.upper()}"}}')
 
     @staticmethod
-    def __on_web_socket_message__(ws, message, callback):
-        #todo Make a Stock Live Update with message
-        # live_stock_update = LiveStockInfo("TWTR", message)
-        mock_stock_update = LiveStockInfo("TWTR", 36.50, 1234567890)
-        callback(mock_stock_update)
+    def __on_web_socket_message__(ws, message, yesterday_price_dict, callback):
+        try:
+            update_obj = json.loads(message)
+            if update_obj["type"] == "ping":
+                return
+            update_ticker = update_obj["data"][0]["s"]
+            update_price = update_obj["data"][0]["p"]
+            update_time = update_obj["data"][0]["t"]
+            yesterday_price = yesterday_price_dict[update_ticker]
+            stock_update = LiveStockInfo(update_ticker, update_price, yesterday_price, update_time)
+            callback(stock_update)
+        except KeyError:
+            log("Unable to parse update: " + message)
 
     @staticmethod
     def __on_web_socket_error__(ws, error):
-        print(error)
+        log(error)
 
     @staticmethod
-    def __on_close__(ws):
-        print("### closed ###")
+    def __on_close__(ws, close_status_code, close_msg):
+        log(f"### closed ### code: {close_status_code} msg: {close_msg}")
