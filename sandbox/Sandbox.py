@@ -1,6 +1,6 @@
 import os
 import sys
-from prod.util.Colors import TextStyles
+from prod.resources.Colors import TextStyles
 from prod.objects.StockGrant import StockGrant
 from prod.objects.StockPortfolio import StockPortfolio
 from prod.repository.ConfigRepository import ConfigRepository

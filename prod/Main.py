@@ -1,17 +1,20 @@
-# This is a sample Python script.
+import argparse
 
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+from resources import Strings
 
 
 def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+
+    parser = argparse.ArgumentParser(description=Strings.HELP_DESC)
+
+    # Adding optional argument
+    parser.add_argument("-r", "--Reset", action='store_true', help=Strings.ARG_RESET_HELP)
+    parser.add_argument("--NUKE", action='store_true', help=Strings.ARG_NUKE_HELP)
+
+    # Read the args
+    args = parser.parse_args()
 
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     print_hi('PyCharm')
-    print()
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
