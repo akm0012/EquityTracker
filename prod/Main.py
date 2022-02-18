@@ -1,20 +1,36 @@
 import argparse
 
-from resources import Strings
+from prod.repository.ConfigRepository import ConfigRepository
+from prod.resources import Strings
 
 
-def print_hi(name):
+class Main:
 
-    parser = argparse.ArgumentParser(description=Strings.HELP_DESC)
+    config_repo = ConfigRepository()
 
-    # Adding optional argument
-    parser.add_argument("-r", "--Reset", action='store_true', help=Strings.ARG_RESET_HELP)
-    parser.add_argument("--NUKE", action='store_true', help=Strings.ARG_NUKE_HELP)
+    def process_arguments(self):
+        parser = argparse.ArgumentParser(description=Strings.HELP_DESC)
 
-    # Read the args
-    args = parser.parse_args()
+        # Adding optional argument
+        parser.add_argument("-r", "--Reset", action='store_true', help=Strings.ARG_RESET_HELP)
+        parser.add_argument("--NUKE", action='store_true', help=Strings.ARG_NUKE_HELP)
+
+        args = parser.parse_args()
+
+        if args.Reset:
+            self.config_repo.clear_stocks()
+            print("Reset!")
+
+        return args
 
 
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print_hi('PyCharm')
+    Main().process_arguments()
+    print("Done!")
+
+
+
+
+
+
+

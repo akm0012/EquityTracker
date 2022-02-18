@@ -99,6 +99,12 @@ class ConfigRepository:
 
         return stock_portfolio
 
+    def clear_stocks(self):
+        config = configparser.ConfigParser()
+        config.read(self.config_file_location)
+        config.remove_section(self.DATABASE_SECTION)
+
+
     def save_stock_portfolio(self, portfolio: StockPortfolio):
         # If the config file is not there, create one
         if not self.does_config_file_exist():

@@ -1,5 +1,3 @@
-import websocket
-
 from prod.network.ApiService import ApiService
 from prod.objects.LiveStockInfo import LiveStockInfo
 from prod.repository.ConfigRepository import ConfigRepository
