@@ -10,6 +10,7 @@ WELCOME_MSG = "\nWelcome! 👋🏼 This simple app will help you keep track of c
 FINNHUB_INPUT_MSG = "Once you have your free Finhub Token, enter it here: "
 FINNHUB_TOKEN_OK = "Finnhub Token has been validated and saved."
 FINNHUB_TOKEN_ERROR = "Finnhub Token is not valid please try again..."
+FINNHUB_TOKEN_EXIST = "Looks like you already have a Finnhub token! If you want to change it, check the '-h' documentaion."
 
 GET_STOCK_MSG = "Now that we have your API Token, let's add some stocks and stock grants to your portfolio."
 GET_STOCK_INPUT_MSG = "Enter in a stock ticker (I.E. TWTR): "
@@ -19,5 +20,9 @@ GET_GRANTS_INPUT = "Enter in your number of grants (0 if no grants): "
 
 GET_GRANTS_COST_INPUT = "Enter the price the stock was granted at: "
 
+MORE_STOCKS_TO_ADD = "Do you want to add any more stocks? (Y/n): "
+MORE_GRANTS_TO_ADD = "Do you want to add any more stock grants for %s? (Y/n): "
+
+YES_OR_NO_ERROR = "Sorry, I didn't recognize that. Please enter, 'Y' for yes, and 'n' for no."
 NOT_A_NUM_ERROR = "That's not a valid number. Please try again..."
 
