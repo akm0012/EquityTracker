@@ -32,3 +32,6 @@ class StockGrant:
     def get_config_ini_str(self) -> str:
         price_str = format(self.price, '.2f')
         return f'{self.ticker.upper()},{self.count},{price_str}'
+
+    def __str__(self) -> str:
+        return f'{self.ticker} - {self.count} at ${self.price}'

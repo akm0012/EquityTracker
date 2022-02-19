@@ -103,6 +103,9 @@ class ConfigRepository:
         config = configparser.ConfigParser()
         config.read(self.config_file_location)
         config.remove_section(self.DATABASE_SECTION)
+        config.add_section(self.DATABASE_SECTION)
+        with open(self.config_file_location, 'w') as configfile:
+            config.write(configfile)
 
 
     def save_stock_portfolio(self, portfolio: StockPortfolio):

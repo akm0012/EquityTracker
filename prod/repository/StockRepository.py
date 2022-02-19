@@ -12,6 +12,13 @@ class StockRepository:
     def __init__(self, api_service: ApiService):
         self.api_service = api_service
 
+    def is_finnhub_api_key_valid(self, api_key: str) -> bool:
+        try:
+            self.api_service.get_stock("TWTR", api_key)
+        except KeyError:
+            return False
+        return True
+
     def is_ticker_symbol_valid(self, ticker_symbol: str) -> bool:
         try:
             self.api_service.get_stock(ticker_symbol)

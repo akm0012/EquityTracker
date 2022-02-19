@@ -18,15 +18,20 @@ class ApiService:
     def __init__(self, config_repo: ConfigRepository):
         self.config_repo = config_repo
 
-    def get_stock(self, ticker: str) -> StockInfo:
+    def get_stock(self, ticker: str, api_token="") -> StockInfo:
+        if api_token == "":
+            api_token = self.config_repo.get_finnhub_api_key()
         ticker = ticker.upper()
         url = f"https://finnhub.io/api/v1/quote?symbol={ticker}"
         param = {"symbol": ticker}
-        headers = {"X-Finnhub-Token": self.config_repo.get_finnhub_api_key()}
+        headers = {"X-Finnhub-Token": api_token}
         request = requests.get(url=url, params=param, headers=headers)
         data = request.json()
 
-        stock_info = StockInfo(ticker, data)
+        try:
+            stock_info = StockInfo(ticker, data)
+        except KeyError:
+            raise UnknownStockError(f"{ticker} is not a valid Stock Symbol.")
 
         if stock_info.current_price == 0:
             raise UnknownStockError(f"{ticker} is not a valid Stock Symbol.")
