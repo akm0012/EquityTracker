@@ -144,20 +144,27 @@ if __name__ == '__main__':
     config_repo = ConfigRepository()
     stock_repo = StockRepository(ApiService(config_repo))
 
+    # Look for command line arguments, if we find any, cancel execution
     process_arguments()
     if len(sys.argv) > 1:
         sys.exit()
 
-    # Step 1 - Welcome Message!
-    print(Strings.WELCOME_MSG)
+    # Check is there is already a portfolio
+    if len(config_repo.is_config_file_valid() and
+           config_repo.get_stock_portfolio().get_all_stock_grants()) > 0:
+        input(Strings.USING_PORTFOLIO_MSG)
 
-    # Step 2 - Get Finnhub API Token
-    get_api_token_from_user()
+    else:
+        # Step 1 - Welcome Message!
+        print(Strings.WELCOME_MSG)
 
-    # Step 3 - Get Stocks / Grants
-    stock_portfolio = get_stock_portfolio_from_user()
-    # Save the portfolio in the config file
-    config_repo.save_stock_portfolio(stock_portfolio)
+        # Step 2 - Get Finnhub API Token
+        get_api_token_from_user()
+
+        # Step 3 - Get Stocks / Grants
+        stock_portfolio = get_stock_portfolio_from_user()
+        # Save the portfolio in the config file
+        config_repo.save_stock_portfolio(stock_portfolio)
 
     log("Main done.")
 
