@@ -42,3 +42,5 @@ SPY     $446.10 (3.5%)
 To Run with CMD prompts on machine with arguments: python3 -m prod.Main -h
 To Run with CMD prompts on virtual machine with arguments: ./venv/bin/python3 -m prod.Main
 To Run easily on virtual machine without arguments: make run
+
+        Current                       Header 1       Header 2       Header 3

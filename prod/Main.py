@@ -1,6 +1,8 @@
 import argparse
 import signal
 import sys
+import curses
+from curses import wrapper
 
 from prod.network.ApiService import ApiService
 from prod.objects.StockGrant import StockGrant
@@ -136,6 +138,39 @@ def prompt_user_yes_or_no(yes_or_no_prompt: str) -> bool:
         else:
             print(Strings.YES_OR_NO_ERROR)
 
+# Gets the X coordinate for a specific column
+def get_x_coord_for_column(column: int) -> int:
+    if column == 0:
+        return 0
+    elif column == 1:
+        return 8
+    else:
+        return 8 + ((column - 1) * 18)
+
+
+def curses_main(stdscr):
+
+    stdscr.clear()
+
+    draw_headers(stdscr)
+
+
+    stdscr.refresh()
+
+    # Any char will stop the program
+    stdscr.getch()
+
+
+def draw_headers(stdscr):
+    max_grant_count = config_repo.get_stock_portfolio().get_max_grant_count()
+    stdscr.addstr(0, get_x_coord_for_column(1), Strings.CURRENT)
+    # Add the "Grant #" Headers
+    for i in range(max_grant_count):
+        grant_header_text = Strings.GRANT_HEADER % (i + 1)
+        stdscr.addstr(0, get_x_coord_for_column(i + 2), grant_header_text)
+    # Add the total Header
+    stdscr.addstr(0, get_x_coord_for_column(max_grant_count + 2), Strings.TOTAL)
+
 
 if __name__ == '__main__':
     # Hides the stack trace when you stop the program with control+c
@@ -166,6 +201,10 @@ if __name__ == '__main__':
         # Save the portfolio in the config file
         config_repo.save_stock_portfolio(stock_portfolio)
 
+    # Todo: show a countdown timer and maybe some instructions on how to exit
+
+    # This is where all the UI magic happens! View CursesSandboxes for some examples.
+    wrapper(curses_main)
     log("Main done.")
 
 

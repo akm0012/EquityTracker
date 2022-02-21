@@ -31,3 +31,8 @@ MORE_GRANTS_TO_ADD = "Do you want to add any more stock grants for %s? (Y/n): "
 YES_OR_NO_ERROR = "Sorry, I didn't recognize that. Please enter, 'Y' for yes, and 'n' for no."
 NOT_A_NUM_ERROR = "That's not a valid number. Please try again..."
 
+# Curses Strings
+CURRENT = "Current"
+GRANT_HEADER = "Header %s"
+TOTAL = "Total"
+

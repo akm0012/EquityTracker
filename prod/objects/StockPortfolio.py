@@ -24,10 +24,18 @@ class StockPortfolio:
             stock_grant_collection.add_stock_grant(stock_grant)
             self.stock_grant_collection_dict[ticker] = stock_grant_collection
 
-    def get_all_stock_grants(self) -> []:
+    def get_all_stock_grants(self) -> [StockGrant]:
         stock_grant_list = []
         for key, value in self.stock_grant_collection_dict.items():
             for stock_grant in value.stock_grant_list:
                 stock_grant_list.append(stock_grant)
 
         return stock_grant_list
+
+    def get_max_grant_count(self) -> int:
+        max_grant_count = 0
+        for key, value in self.stock_grant_collection_dict.items():
+            max_grant_count = max(max_grant_count, len(value.stock_grant_list))
+
+        return max_grant_count
+
