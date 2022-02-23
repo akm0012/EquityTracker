@@ -106,17 +106,13 @@ def calculate_multi_grant_dollar_change(current_stock_price: float,
 
 
 """
-The program will display something like this: 
-        Current          Grant 1             Grant 2             Total
-TWTR    $36.23  (2.4%)   $50,000 (-50.5%)    $20,000 (+23.3%)    $70,000 (-36.3%)
-
-So the function will calculate the String: 
-TWTR    $36.23  (2.4%)   $50,000 (-50.5%)    $20,000 (+23.3%)    $70,000 (-36.3%)
-
+This will simply add up the current value of a list of grants. Based on the current stock price. 
 """
-def get_stock_update_string(ticker: str,
-                            current_stock_price: float,
-                            yesterdays_close_price: float,
-                            stock_grant_list: list[StockGrant]) -> str:
-    return ""
+def calculate_multi_grant_dollar_amount(current_stock_price: float,
+                                        stock_grant_list: list[StockGrant]) -> float:
+    total_amount = 0
+    for grant in stock_grant_list:
+        total_amount += grant.count * current_stock_price
+
+    return total_amount
 

@@ -141,24 +141,21 @@ def prompt_user_yes_or_no(yes_or_no_prompt: str) -> bool:
         else:
             print(Strings.YES_OR_NO_ERROR)
 
+
 # Gets the X coordinate for a specific column
 def get_x_coord_for_column(column: int) -> int:
-    current_padding = 8
-    header_1_padding = 20
+    current_header_x = 8
+    header_1_width = 20
     header_normal_padding = 25
 
     if column == 0:
         return 0
     elif column == 1:
-        return current_padding
+        return current_header_x
     elif column == 2:
-        return current_padding + header_1_padding
+        return current_header_x + header_1_width
     else:
-        return current_padding + ((column - 1) * header_normal_padding)
-
-
-def get_window_width_for_stock_grant_collection(stock_grant_collection: StockGrantCollection) -> int:
-    return 25 + (20 * len(stock_grant_collection.stock_grant_list))
+        return current_header_x + header_1_width + ((column - 2) * header_normal_padding)
 
 
 def curses_main(stdscr):
@@ -184,7 +181,7 @@ def curses_main(stdscr):
     window_row = 1
     for stock_grant_collection in portfolio.get_all_stock_grant_collections():
         ticker_symbol = stock_grant_collection.ticker
-        width = get_window_width_for_stock_grant_collection(stock_grant_collection)
+        width = curses.COLS - 1  # The entire width of the window
         # Window size = h, w.  Location = y, x
         stock_row_window = curses.newwin(1, width, window_row, 0)
         window_row += 1
@@ -200,7 +197,6 @@ def update_ui_with_live_stock_info(portfolio: StockPortfolio, stock_window_dict,
     stock_window = stock_window_dict[update.ticker]
     stock_window.clear()
     update_stock_window_with_new_data(stock_window, update, portfolio.get_stock_grant_collection(update.ticker))
-    # stock_window.addstr(f"{update.ticker} = {update.current_price}")
     stock_window.refresh()
 
 
@@ -233,15 +229,18 @@ def update_stock_window_with_new_data(stock_window,
         current_grant_percent_change = MathUtil.calculate_grant_percent_change_2(stock_update.current_price, grant)
         percent_color = GREEN if current_grant_percent_change >= 0 else RED
         column_x_coord = get_x_coord_for_column(stock_grant_column)
-        # current_grant_value_str = f"${format(current_grant_value, '.2f')}"
         current_grant_value_str = "${:,.2f}".format(current_grant_value)
         stock_window.addstr(0, column_x_coord, current_grant_value_str)
         stock_window.addstr(0, column_x_coord + len(current_grant_value_str) + 1,
                             f"({format(current_grant_percent_change, '.2f')} %)", percent_color)
         stock_grant_column += 1
 
-    # Todo Add the Total
-    # stock_window.addstr(f"Bamalamadingdong {stock_update.ticker} @ {stock_update.current_price}")
+    # Add the Total Column
+    total_column = stock_grant_column  # 1 will have already been added to it
+    total_grant_value = MathUtil.calculate_multi_grant_dollar_amount(stock_update.current_price,
+                                                                     stock_grant_collection.stock_grant_list)
+    total_grant_value_str = "${:,.2f}".format(total_grant_value)
+    stock_window.addstr(0, get_x_coord_for_column(total_column), total_grant_value_str)
 
 
 def draw_headers(stdscr):

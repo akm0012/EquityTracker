@@ -2,7 +2,8 @@ from unittest import TestCase
 
 from prod.objects.StockGrant import StockGrant
 from prod.util.MathUtil import calculate_percent_change, calculate_grant_percent_change, \
-    calculate_multi_grant_percent_change, calculate_multi_grant_dollar_change, calculate_grant_dollar_change
+    calculate_multi_grant_percent_change, calculate_multi_grant_dollar_change, calculate_grant_dollar_change, \
+    calculate_multi_grant_dollar_amount
 
 
 class MathUtilTests(TestCase):
@@ -87,11 +88,13 @@ class MathUtilTests(TestCase):
 
         self.assertEqual(expected, actual)
 
-    def test_get_stock_update_string_1(self):
+    def test_calculate_multi_grant_dollar_amount(self):
         current_share_price = 60.00
-        yesterday_share_price = 50.00
 
         grant_1 = StockGrant("TWTR", 2000, 50)
         grant_2 = StockGrant("TWTR", 100, 70)
 
-        expected
+        expected = 126000
+        actual = calculate_multi_grant_dollar_amount(current_share_price, [grant_1, grant_2])
+
+        self.assertEqual(expected, actual)

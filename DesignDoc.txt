@@ -37,10 +37,6 @@ TWTR    $60.00  (2.4%)   $50,000 (-50.5%)    $20,000 (+23.3%)    $70,000 (-36.3%
 TWTR    $36.23  (2.4%)   $50,000 (-50.5%)    $20,000 (+23.3%)    $70,000 (-36.3%)
 SPY     $446.10 (3.5%)
 
-** Prob want a window per row, so I only need to update rows with updates
-
 To Run with CMD prompts on machine with arguments: python3 -m prod.Main -h
 To Run with CMD prompts on virtual machine with arguments: ./venv/bin/python3 -m prod.Main
 To Run easily on virtual machine without arguments: make run
-
-        Current                       Header 1       Header 2       Header 3
