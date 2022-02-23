@@ -167,6 +167,11 @@ def curses_main(stdscr):
     # Hide the cursor
     curs_set(0)
 
+    # curses.start_color()
+
+    # Use the default terminal colors! Cool!
+    curses.use_default_colors()
+
     stdscr.clear()
 
     draw_headers(stdscr)
@@ -196,7 +201,7 @@ def curses_main(stdscr):
 def update_ui_with_live_stock_info(portfolio: StockPortfolio, stock_window_dict, update: LiveStockInfo):
     stock_window = stock_window_dict[update.ticker]
     stock_window.clear()
-    update_stock_window_with_new_data(stock_window, update, portfolio.get_stock_grant_collection(update.ticker))
+    update_stock_window_with_new_data(stock_window, update, portfolio)
     stock_window.refresh()
 
 
@@ -206,12 +211,16 @@ def update_ui_with_live_stock_info(portfolio: StockPortfolio, stock_window_dict,
 #
 def update_stock_window_with_new_data(stock_window,
                                       stock_update: LiveStockInfo,
-                                      stock_grant_collection: StockGrantCollection):
+                                      stock_portfolio: StockPortfolio):
     GREEN = curses.color_pair(1)
     RED = curses.color_pair(2)
 
+    ticker = stock_update.ticker
+
+    stock_grant_collection = stock_portfolio.get_stock_grant_collection(ticker)
+
     # Add the ticker at the beginning
-    stock_window.addstr(0, 0, f"{stock_update.ticker}")
+    stock_window.addstr(0, 0, f"{ticker}")
 
     # Add the Current Price / percent change
     current_price = round(stock_update.current_price, 2)
@@ -236,7 +245,7 @@ def update_stock_window_with_new_data(stock_window,
         stock_grant_column += 1
 
     # Add the Total Column
-    total_column = stock_grant_column  # 1 will have already been added to it
+    total_column = stock_portfolio.get_max_grant_count() + 1
     total_grant_value = MathUtil.calculate_multi_grant_dollar_amount(stock_update.current_price,
                                                                      stock_grant_collection.stock_grant_list)
     total_grant_value_str = "${:,.2f}".format(total_grant_value)
@@ -245,13 +254,13 @@ def update_stock_window_with_new_data(stock_window,
 
 def draw_headers(stdscr):
     max_grant_count = config_repo.get_stock_portfolio().get_max_grant_count()
-    stdscr.addstr(0, get_x_coord_for_column(1), Strings.CURRENT)
+    stdscr.addstr(0, get_x_coord_for_column(1), Strings.CURRENT, curses.A_UNDERLINE)
     # Add the "Grant #" Headers
     for i in range(max_grant_count - 1):
         grant_header_text = Strings.GRANT_HEADER % (i + 1)
-        stdscr.addstr(0, get_x_coord_for_column(i + 2), grant_header_text)
+        stdscr.addstr(0, get_x_coord_for_column(i + 2), grant_header_text, curses.A_UNDERLINE)
     # Add the total Header
-    stdscr.addstr(0, get_x_coord_for_column(max_grant_count + 1), Strings.TOTAL)
+    stdscr.addstr(0, get_x_coord_for_column(max_grant_count + 1), Strings.TOTAL, curses.A_UNDERLINE)
 
 
 if __name__ == '__main__':
@@ -279,9 +288,9 @@ if __name__ == '__main__':
         get_api_token_from_user()
 
         # Step 3 - Get Stocks / Grants
-        stock_portfolio = get_stock_portfolio_from_user()
+        stock_portfolio_from_user = get_stock_portfolio_from_user()
         # Save the portfolio in the config file
-        config_repo.save_stock_portfolio(stock_portfolio)
+        config_repo.save_stock_portfolio(stock_portfolio_from_user)
 
     # Todo: show a countdown timer and maybe some instructions on how to exit
 
