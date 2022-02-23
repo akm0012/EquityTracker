@@ -8,9 +8,7 @@ class StockGrantCollection:
 
     def __init__(self, ticker: str):
         self.ticker = ticker
-        self.stock_grant_list = []
+        self.stock_grant_list = [StockGrant]
 
     def add_stock_grant(self, stock_grant: StockGrant):
         self.stock_grant_list.append(stock_grant)
-
-

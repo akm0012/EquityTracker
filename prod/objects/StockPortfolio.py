@@ -24,6 +24,16 @@ class StockPortfolio:
             stock_grant_collection.add_stock_grant(stock_grant)
             self.stock_grant_collection_dict[ticker] = stock_grant_collection
 
+    def get_all_stock_grant_collections(self) -> [StockGrantCollection]:
+        return self.stock_grant_collection_dict.values()
+
+    def get_all_stock_ticker_symbols(self) -> [str]:
+        return self.stock_grant_collection_dict.keys()
+
+    def get_stock_grant_collection(self, ticker: str) -> StockGrantCollection:
+        # todo: error check
+        return self.stock_grant_collection_dict[ticker]
+
     def get_all_stock_grants(self) -> [StockGrant]:
         stock_grant_list = []
         for key, value in self.stock_grant_collection_dict.items():

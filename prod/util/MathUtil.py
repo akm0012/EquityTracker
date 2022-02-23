@@ -30,6 +30,10 @@ def calculate_grant_percent_change(current_stock_price: float,
     percent_change = calculate_percent_change(original_grant_price, current_grant_price)
     return round(percent_change, 2)
 
+
+def calculate_grant_percent_change_2(current_stock_price: float, stock_grant: StockGrant) -> float:
+    return calculate_grant_percent_change(current_stock_price, stock_grant.count, stock_grant.price)
+
 """
 Calculates the dollar difference of a grant and it's current stock price. 
 IE: current_stock_price = $60.00
@@ -99,3 +103,20 @@ def calculate_multi_grant_dollar_change(current_stock_price: float,
 
     total_dollar_change = current_total_grant_price - original_total_grant_price
     return round(total_dollar_change, 2)
+
+
+"""
+The program will display something like this: 
+        Current          Grant 1             Grant 2             Total
+TWTR    $36.23  (2.4%)   $50,000 (-50.5%)    $20,000 (+23.3%)    $70,000 (-36.3%)
+
+So the function will calculate the String: 
+TWTR    $36.23  (2.4%)   $50,000 (-50.5%)    $20,000 (+23.3%)    $70,000 (-36.3%)
+
+"""
+def get_stock_update_string(ticker: str,
+                            current_stock_price: float,
+                            yesterdays_close_price: float,
+                            stock_grant_list: list[StockGrant]) -> str:
+    return ""
+

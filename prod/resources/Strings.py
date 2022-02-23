@@ -33,6 +33,6 @@ NOT_A_NUM_ERROR = "That's not a valid number. Please try again..."
 
 # Curses Strings
 CURRENT = "Current"
-GRANT_HEADER = "Header %s"
+GRANT_HEADER = "Grant %s"
 TOTAL = "Total"
 

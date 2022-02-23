@@ -2,14 +2,18 @@ import argparse
 import signal
 import sys
 import curses
+from _curses import curs_set
 from curses import wrapper
 
 from prod.network.ApiService import ApiService
+from prod.objects.LiveStockInfo import LiveStockInfo
 from prod.objects.StockGrant import StockGrant
+from prod.objects.StockGrantCollection import StockGrantCollection
 from prod.objects.StockPortfolio import StockPortfolio
 from prod.repository.ConfigRepository import ConfigRepository
 from prod.repository.StockRepository import StockRepository
 from prod.resources import Strings
+from prod.util import MathUtil
 from prod.util.LogUtil import log
 
 
@@ -61,7 +65,6 @@ def get_stock_portfolio_from_user() -> StockPortfolio:
     # Loop asking for Stocks to add
     more_stocks_to_add = True
     while more_stocks_to_add:
-
         # Get the Stock Ticker
         stock_ticker = get_stock_ticker_from_user()
 
@@ -140,36 +143,116 @@ def prompt_user_yes_or_no(yes_or_no_prompt: str) -> bool:
 
 # Gets the X coordinate for a specific column
 def get_x_coord_for_column(column: int) -> int:
+    current_padding = 8
+    header_1_padding = 20
+    header_normal_padding = 25
+
     if column == 0:
         return 0
     elif column == 1:
-        return 8
+        return current_padding
+    elif column == 2:
+        return current_padding + header_1_padding
     else:
-        return 8 + ((column - 1) * 18)
+        return current_padding + ((column - 1) * header_normal_padding)
+
+
+def get_window_width_for_stock_grant_collection(stock_grant_collection: StockGrantCollection) -> int:
+    return 25 + (20 * len(stock_grant_collection.stock_grant_list))
 
 
 def curses_main(stdscr):
+    portfolio = config_repo.get_stock_portfolio()
+
+    curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
+    curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
+
+    # Hide the cursor
+    curs_set(0)
 
     stdscr.clear()
 
     draw_headers(stdscr)
 
-
     stdscr.refresh()
 
-    # Any char will stop the program
-    stdscr.getch()
+    # Create a dict of Windows and Ticker symbols and update it when live updates come in
+    # This holds {TWTR: Window}, where the Window is the "View" that will be written to whenever a TWTR update happens.
+    stock_window_dict = {}
+
+    # Create windows for all the Stocks in the Portfolio
+    window_row = 1
+    for stock_grant_collection in portfolio.get_all_stock_grant_collections():
+        ticker_symbol = stock_grant_collection.ticker
+        width = get_window_width_for_stock_grant_collection(stock_grant_collection)
+        # Window size = h, w.  Location = y, x
+        stock_row_window = curses.newwin(1, width, window_row, 0)
+        window_row += 1
+        stock_window_dict[ticker_symbol] = stock_row_window
+
+    stock_repo.listen_for_portfolio_updates(
+        portfolio, lambda live_stock_update: update_ui_with_live_stock_info(portfolio, stock_window_dict, live_stock_update))
+
+    # This line never seems to be hit...
+
+
+def update_ui_with_live_stock_info(portfolio: StockPortfolio, stock_window_dict, update: LiveStockInfo):
+    stock_window = stock_window_dict[update.ticker]
+    stock_window.clear()
+    update_stock_window_with_new_data(stock_window, update, portfolio.get_stock_grant_collection(update.ticker))
+    # stock_window.addstr(f"{update.ticker} = {update.current_price}")
+    stock_window.refresh()
+
+
+# Reminder, this is what it should look like.
+#         Current          Grant 1             Grant 2             Total
+# TWTR    $36.23  (2.4%)   $50,000 (-50.5%)    $20,000 (+23.3%)    $70,000 (-36.3%)
+#
+def update_stock_window_with_new_data(stock_window,
+                                      stock_update: LiveStockInfo,
+                                      stock_grant_collection: StockGrantCollection):
+    GREEN = curses.color_pair(1)
+    RED = curses.color_pair(2)
+
+    # Add the ticker at the beginning
+    stock_window.addstr(0, 0, f"{stock_update.ticker}")
+
+    # Add the Current Price / percent change
+    current_price = round(stock_update.current_price, 2)
+    percent_change = MathUtil.calculate_percent_change(stock_update.previous_close_price, current_price)
+    percent_color = GREEN if percent_change >= 0 else RED
+    stock_window.addstr(0, get_x_coord_for_column(1), "${:,.2f}".format(current_price))
+    stock_window.addstr(0, get_x_coord_for_column(1) + 9, f"({format(percent_change, '.2f')} %)", percent_color)
+
+    # Add the Grants
+    stock_grant_column = 2
+    for grant in stock_grant_collection.stock_grant_list:
+        if grant.count == 0:
+            continue
+        current_grant_value = grant.count * stock_update.current_price
+        current_grant_percent_change = MathUtil.calculate_grant_percent_change_2(stock_update.current_price, grant)
+        percent_color = GREEN if current_grant_percent_change >= 0 else RED
+        column_x_coord = get_x_coord_for_column(stock_grant_column)
+        # current_grant_value_str = f"${format(current_grant_value, '.2f')}"
+        current_grant_value_str = "${:,.2f}".format(current_grant_value)
+        stock_window.addstr(0, column_x_coord, current_grant_value_str)
+        stock_window.addstr(0, column_x_coord + len(current_grant_value_str) + 1,
+                            f"({format(current_grant_percent_change, '.2f')} %)", percent_color)
+        stock_grant_column += 1
+
+    # Todo Add the Total
+    # stock_window.addstr(f"Bamalamadingdong {stock_update.ticker} @ {stock_update.current_price}")
 
 
 def draw_headers(stdscr):
     max_grant_count = config_repo.get_stock_portfolio().get_max_grant_count()
     stdscr.addstr(0, get_x_coord_for_column(1), Strings.CURRENT)
     # Add the "Grant #" Headers
-    for i in range(max_grant_count):
+    for i in range(max_grant_count - 1):
         grant_header_text = Strings.GRANT_HEADER % (i + 1)
         stdscr.addstr(0, get_x_coord_for_column(i + 2), grant_header_text)
     # Add the total Header
-    stdscr.addstr(0, get_x_coord_for_column(max_grant_count + 2), Strings.TOTAL)
+    stdscr.addstr(0, get_x_coord_for_column(max_grant_count + 1), Strings.TOTAL)
 
 
 if __name__ == '__main__':
@@ -206,9 +289,3 @@ if __name__ == '__main__':
     # This is where all the UI magic happens! View CursesSandboxes for some examples.
     wrapper(curses_main)
     log("Main done.")
-
-
-
-
-
-
