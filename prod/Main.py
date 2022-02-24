@@ -159,18 +159,15 @@ def get_x_coord_for_column(column: int) -> int:
 
 
 def curses_main(stdscr):
-    portfolio = config_repo.get_stock_portfolio()
-
-    curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
-    curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
+    # Use the default terminal colors! Cool!
+    curses.use_default_colors()
+    curses.init_pair(1, curses.COLOR_GREEN, -1)  # -1 for default color
+    curses.init_pair(2, curses.COLOR_RED, -1)
 
     # Hide the cursor
     curs_set(0)
 
-    # curses.start_color()
-
-    # Use the default terminal colors! Cool!
-    curses.use_default_colors()
+    portfolio = config_repo.get_stock_portfolio()
 
     stdscr.clear()
 
