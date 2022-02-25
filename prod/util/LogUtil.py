@@ -1,3 +1,3 @@
 def log(msg):
-    if True:
+    if False:
         print(msg)

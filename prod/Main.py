@@ -242,22 +242,28 @@ def update_stock_window_with_new_data(stock_window,
         stock_grant_column += 1
 
     # Add the Total Column
-    total_column = stock_portfolio.get_max_grant_count() + 1
-    total_grant_value = MathUtil.calculate_multi_grant_dollar_amount(stock_update.current_price,
-                                                                     stock_grant_collection.stock_grant_list)
-    total_grant_value_str = "${:,.2f}".format(total_grant_value)
-    stock_window.addstr(0, get_x_coord_for_column(total_column), total_grant_value_str)
+    max_grant_count = stock_portfolio.get_max_grant_count()
+    if max_grant_count != 0:
+        total_column = max_grant_count + 2
+        total_grant_value = MathUtil.calculate_multi_grant_dollar_amount(stock_update.current_price,
+                                                                         stock_grant_collection.stock_grant_list)
+        total_grant_value_str = "${:,.2f}".format(total_grant_value)
+        stock_window.addstr(0, get_x_coord_for_column(total_column), total_grant_value_str)
 
 
 def draw_headers(stdscr):
     max_grant_count = config_repo.get_stock_portfolio().get_max_grant_count()
     stdscr.addstr(0, get_x_coord_for_column(1), Strings.CURRENT, curses.A_UNDERLINE)
+
+    if max_grant_count == 0:
+        return
+
     # Add the "Grant #" Headers
-    for i in range(max_grant_count - 1):
+    for i in range(max_grant_count):
         grant_header_text = Strings.GRANT_HEADER % (i + 1)
         stdscr.addstr(0, get_x_coord_for_column(i + 2), grant_header_text, curses.A_UNDERLINE)
     # Add the total Header
-    stdscr.addstr(0, get_x_coord_for_column(max_grant_count + 1), Strings.TOTAL, curses.A_UNDERLINE)
+    stdscr.addstr(0, get_x_coord_for_column(max_grant_count + 2), Strings.TOTAL, curses.A_UNDERLINE)
 
 
 if __name__ == '__main__':
@@ -272,10 +278,14 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         sys.exit()
 
+    # Init the config file if it is not there
+    if not config_repo.does_config_file_exist():
+        log("Creating Empty Config File")
+        config_repo.create_empty_config_file()
+
     # Check is there is already a portfolio
-    if len(config_repo.is_config_file_valid() and
-           config_repo.get_stock_portfolio().get_all_stock_grants()) > 0:
-        input(Strings.USING_PORTFOLIO_MSG)
+    if config_repo.is_config_file_valid() and len(config_repo.get_stock_portfolio().get_all_stock_grants()) > 0:
+        print(Strings.USING_PORTFOLIO_MSG)
 
     else:
         # Step 1 - Welcome Message!
@@ -290,6 +300,7 @@ if __name__ == '__main__':
         config_repo.save_stock_portfolio(stock_portfolio_from_user)
 
     # Todo: show a countdown timer and maybe some instructions on how to exit
+    input(Strings.START_STOCK_UI_MSG)
 
     # This is where all the UI magic happens! View CursesSandboxes for some examples.
     wrapper(curses_main)

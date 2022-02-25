@@ -4,7 +4,7 @@ from prod.objects.StockGrantCollection import StockGrantCollection
 
 class StockPortfolio:
 
-    stock_grant_collection_dict = {}
+    stock_grant_collection_dict = dict[str, StockGrantCollection]
 
     def __init__(self):
         self.stock_grant_collection_dict = {}
@@ -45,6 +45,8 @@ class StockPortfolio:
     def get_max_grant_count(self) -> int:
         max_grant_count = 0
         for key, value in self.stock_grant_collection_dict.items():
+            if value.is_tracking_stock_only:
+                continue
             max_grant_count = max(max_grant_count, len(value.stock_grant_list))
 
         return max_grant_count

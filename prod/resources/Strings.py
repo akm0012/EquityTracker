@@ -8,7 +8,9 @@ WELCOME_MSG = "\nWelcome! 👋🏼 This simple app will help you keep track of c
               "But first, we need to go through a simple set up...\n"
 USING_PORTFOLIO_MSG = "It looks like you already have a stock portfolio set up. If you would like to add, edit, or " \
                       "remove any stocks or grants please use the command line arguments or edit the config.ini file " \
-                      "directly. \n\nPress 'Enter' to continue..."
+                      "directly.\n"
+
+START_STOCK_UI_MSG = "To quit the application, press 'Ctrl + c'. Press any key to start..."
 
 FINNHUB_INPUT_MSG = "You will need a free API Token from Finnhub. You can get one here: https://finnhub.io/dashboard.\n" \
                     "Once you have your free Finhub Token, enter it here: "
