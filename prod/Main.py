@@ -97,6 +97,8 @@ def get_grant_price(grant_count) -> float:
         is_grant_price_valid = False
         while not is_grant_price_valid:
             grant_price = input(Strings.GET_GRANTS_COST_INPUT)
+            if grant_price[0] == '$':
+                grant_price = grant_price[1:]
             try:
                 grant_price = float(grant_price)
                 is_grant_price_valid = True
