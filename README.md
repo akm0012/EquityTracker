@@ -9,8 +9,6 @@ This application is a simple stock and equity tracker that runs in your command 
 4. Follow the prompts to set up your portfolio. 
 5. Refer to the FAQ if you have any questions.
 
-#Features 
-
 ## Simple Stock Monitoring
 
 ![alt tag](img2.png)
