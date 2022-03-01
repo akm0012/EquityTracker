@@ -250,6 +250,12 @@ def update_stock_window_with_new_data(stock_window,
         total_grant_value = MathUtil.calculate_multi_grant_dollar_amount(stock_update.current_price,
                                                                          stock_grant_collection.stock_grant_list)
         total_grant_value_str = "${:,.2f}".format(total_grant_value)
+        # This will change each vesting period, so prob not worth
+        total_vest_periods_left = 4 * 4
+        if total_grant_value > 0:
+            next_vest_amount_str = total_grant_value/total_vest_periods_left
+            total_grant_value_str += " (${:,.2f})".format(next_vest_amount_str)
+
         stock_window.addstr(0, get_x_coord_for_column(total_column), total_grant_value_str)
 
 
