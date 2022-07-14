@@ -308,7 +308,8 @@ if __name__ == '__main__':
         config_repo.save_stock_portfolio(stock_portfolio_from_user)
 
     # Todo: show a countdown timer and maybe some instructions on how to exit
-    input(Strings.START_STOCK_UI_MSG)
+# Todo: Disabled for now as I know how to exit
+#    input(Strings.START_STOCK_UI_MSG)
 
     # This is where all the UI magic happens! View CursesSandboxes for some examples.
     wrapper(curses_main)
