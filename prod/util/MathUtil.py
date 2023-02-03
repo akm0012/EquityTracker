@@ -55,8 +55,8 @@ def calculate_grant_dollar_change(current_stock_price: float,
 Calculates the percent difference of a list of grants and it's current stock price. 
 IE: current_stock_price = $60.00
     
-    grant_1 = StockGrant("TWTR", 2000, 50)
-    grant_2 = StockGrant("TWTR", 100, 70)
+    grant_1 = StockGrant("AAPL", 2000, 50)
+    grant_2 = StockGrant("AAPL", 100, 70)
 
     Percent Difference = 17.76%
 """
@@ -82,8 +82,8 @@ def calculate_multi_grant_percent_change(current_stock_price: float,
 Calculates the dollar difference of a list of grants and it's current stock price. 
 IE: current_stock_price = $60.00
 
-    grant_1 = StockGrant("TWTR", 2000, 50)
-    grant_2 = StockGrant("TWTR", 100, 70)
+    grant_1 = StockGrant("AAPL", 2000, 50)
+    grant_2 = StockGrant("AAPL", 100, 70)
 
     Dollar Difference = $19,000
 """

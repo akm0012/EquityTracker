@@ -15,7 +15,7 @@ class StockRepository:
 
     def is_finnhub_api_key_valid(self, api_key: str) -> bool:
         try:
-            self.api_service.get_stock("TWTR", api_key)
+            self.api_service.get_stock("AAPL", api_key)
         except KeyError:
             return False
         return True
@@ -33,7 +33,7 @@ class StockRepository:
     and will send back updates as they are available. 
     """
     def listen_for_stock_price_updates(self, ticker_list: [str], price_callback):
-        # Holds all the prices of the previous day for a specific stock. I.E. {TWTR : 35.50}
+        # Holds all the prices of the previous day for a specific stock. I.E. {AAPL : 35.50}
         yesterday_price_dict = {}
 
         # First, get a starting price for all the tickers interested

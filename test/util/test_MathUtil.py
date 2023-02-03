@@ -69,8 +69,8 @@ class MathUtilTests(TestCase):
     def test_calculate_multi_grant_percent_change(self):
         current_share_price = 60.00
 
-        grant_1 = StockGrant("TWTR", 2000, 50)
-        grant_2 = StockGrant("TWTR", 100, 70)
+        grant_1 = StockGrant("TWTR", 2000, 50, 0)
+        grant_2 = StockGrant("TWTR", 100, 70, 0)
 
         expected = 17.76
         actual = calculate_multi_grant_percent_change(current_share_price, [grant_1, grant_2])
@@ -80,8 +80,8 @@ class MathUtilTests(TestCase):
     def test_calculate_multi_grant_dollar_change(self):
         current_share_price = 60.00
 
-        grant_1 = StockGrant("TWTR", 2000, 50)
-        grant_2 = StockGrant("TWTR", 100, 70)
+        grant_1 = StockGrant("TWTR", 2000, 50, 0)
+        grant_2 = StockGrant("TWTR", 100, 70, 0)
 
         expected = 19000
         actual = calculate_multi_grant_dollar_change(current_share_price, [grant_1, grant_2])
@@ -91,8 +91,8 @@ class MathUtilTests(TestCase):
     def test_calculate_multi_grant_dollar_amount(self):
         current_share_price = 60.00
 
-        grant_1 = StockGrant("TWTR", 2000, 50)
-        grant_2 = StockGrant("TWTR", 100, 70)
+        grant_1 = StockGrant("TWTR", 2000, 50, 0)
+        grant_2 = StockGrant("TWTR", 100, 70, 0)
 
         expected = 126000
         actual = calculate_multi_grant_dollar_amount(current_share_price, [grant_1, grant_2])

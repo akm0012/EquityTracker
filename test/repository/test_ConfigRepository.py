@@ -143,9 +143,9 @@ class TestConfigRepository(TestCase):
         config_repo.delete_config_file()
 
         # Create 3 stocks
-        stock_grant_1 = StockGrant("APPL", 60, 200.50)
-        stock_grant_2 = StockGrant("TWTR", 600, 66.50)
-        stock_grant_3 = StockGrant("TWTR", 700, 70.50)
+        stock_grant_1 = StockGrant("APPL", 60, 200.50, 10)
+        stock_grant_2 = StockGrant("TWTR", 600, 66.50, 0)
+        stock_grant_3 = StockGrant("TWTR", 700, 70.50, 0)
 
         # Add the Stocks to a Portfolio
         portfolio = StockPortfolio()
@@ -171,14 +171,17 @@ class TestConfigRepository(TestCase):
         self.assertEqual(stock_grant_1.ticker, portfolio2_stock_1.ticker)
         self.assertEqual(stock_grant_1.count, portfolio2_stock_1.count)
         self.assertEqual(stock_grant_1.price, portfolio2_stock_1.price)
+        self.assertEqual(stock_grant_1.vests_left, portfolio2_stock_1.vests_left)
 
         self.assertEqual(stock_grant_2.ticker, portfolio2_stock_2.ticker)
         self.assertEqual(stock_grant_2.count, portfolio2_stock_2.count)
         self.assertEqual(stock_grant_2.price, portfolio2_stock_2.price)
+        self.assertEqual(stock_grant_2.vests_left, portfolio2_stock_2.vests_left)
 
         self.assertEqual(stock_grant_3.ticker, portfolio2_stock_3.ticker)
         self.assertEqual(stock_grant_3.count, portfolio2_stock_3.count)
         self.assertEqual(stock_grant_3.price, portfolio2_stock_3.price)
+        self.assertEqual(stock_grant_3.vests_left, portfolio2_stock_3.vests_left)
 
         config_repo.delete_config_file()
 

@@ -84,8 +84,11 @@ def get_stock_grants_from_user(portfolio, stock_ticker):
         # Get price of stock for grant
         grant_price = get_grant_price(grant_count)
 
+        # Get number of vests left for this Grant
+        vests_left = get_num_of_vests_left_from_user()
+
         # Add stock grant to Portfolio
-        stock_grant = StockGrant(stock_ticker, grant_count, grant_price)
+        stock_grant = StockGrant(stock_ticker, grant_count, grant_price, vests_left)
         print(f"Adding {stock_grant} to portfolio.")
         portfolio.add_stock_grant(stock_grant)
         more_grants_to_add = grant_count != 0 and prompt_user_yes_or_no(Strings.MORE_GRANTS_TO_ADD % stock_ticker)
@@ -105,6 +108,18 @@ def get_grant_price(grant_count) -> float:
             except:
                 print(Strings.NOT_A_NUM_ERROR)
     return grant_price
+
+def get_num_of_vests_left_from_user() -> int:
+    is_num_of_vests_valid = False
+    vest_count = 0
+    while not is_num_of_vests_valid:
+        vest_count = input(Strings.GET_NUM_OF_VESTS_INPUT)
+        try:
+            vest_count = int(vest_count)
+            is_num_of_vests_valid = True
+        except:
+            print(Strings.NOT_A_NUM_ERROR)
+    return vest_count
 
 
 def get_grant_count_from_user() -> int:
@@ -247,13 +262,13 @@ def update_stock_window_with_new_data(stock_window,
     max_grant_count = stock_portfolio.get_max_grant_count()
     if max_grant_count != 0:
         total_column = max_grant_count + 2
-        total_grant_value = MathUtil.calculate_multi_grant_dollar_amount(stock_update.current_price,
-                                                                         stock_grant_collection.stock_grant_list)
+        total_grant_value = stock_portfolio.get_total_stock_value(ticker, stock_update.current_price)
         total_grant_value_str = "${:,.2f}".format(total_grant_value)
-        # This will change each vesting period, so prob not worth
-        total_vest_periods_left = 16
+
+        # Todo: This is where things may break if I didn't do something right. Should prob write a test.
         if total_grant_value > 0:
-            next_vest_amount_str = total_grant_value/total_vest_periods_left
+            # next_vest_amount_str = total_grant_value/total_vest_periods_left
+            next_vest_amount_str = stock_portfolio.get_next_vest_value(ticker, current_price)
             total_grant_value_str += " (${:,.2f})".format(next_vest_amount_str)
 
         stock_window.addstr(0, get_x_coord_for_column(total_column), total_grant_value_str)

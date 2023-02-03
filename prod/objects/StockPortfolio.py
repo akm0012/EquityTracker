@@ -1,5 +1,6 @@
 from prod.objects.StockGrant import StockGrant
 from prod.objects.StockGrantCollection import StockGrantCollection
+from prod.util import MathUtil
 
 
 class StockPortfolio:
@@ -51,3 +52,29 @@ class StockPortfolio:
 
         return max_grant_count
 
+    """
+    Gets the total value of all the grants combined. 
+    """
+    def get_total_stock_value(self, stock_ticker: str, current_stock_price: float) -> float:
+        grant_list = self.get_stock_grant_collection(stock_ticker).stock_grant_list
+        return MathUtil.calculate_multi_grant_dollar_amount(current_stock_price, grant_list)
+
+    """
+    Gets the value of the next vest. 
+    
+    I.E. 
+    $10,000 vested evenly over 4 years. (16 total vests) = $625
+    $10,000 vested evenly over 1 year. (4 total vests) =  $2,500
+    Next vest = $625 + $2,500 = $3,125
+    """
+    def get_next_vest_value(self, ticker: str, current_price: float) -> float:
+
+        grants = self.get_stock_grant_collection(ticker)
+
+        next_vest_total = 0.0
+
+        for grant in grants.stock_grant_list:
+            next_grant_vest = (grant.count * current_price) / grant.vests_left
+            next_vest_total += next_grant_vest
+
+        return next_vest_total

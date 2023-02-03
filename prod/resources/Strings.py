@@ -20,10 +20,11 @@ FINNHUB_TOKEN_EXIST = "Looks like you already have a Finnhub token! If you want 
                       "documentation.\n"
 
 GET_STOCK_MSG = "Now that we have your API Token, let's add some stocks and stock grants to your portfolio."
-GET_STOCK_INPUT_MSG = "Enter in a stock ticker (I.E. TWTR): "
+GET_STOCK_INPUT_MSG = "Enter in a stock ticker (I.E. AAPL): "
 GET_STOCK_ERROR = "That stock symbol is not valid. Please try again..."
 
 GET_GRANTS_INPUT = "Enter in your number of grants (0 if no grants): "
+GET_NUM_OF_VESTS_INPUT = "Enter in your number of vests left (I.E. 4 year vest evenly would be 16): "
 
 GET_GRANTS_COST_INPUT = "Enter the price the stock was granted at: "
 

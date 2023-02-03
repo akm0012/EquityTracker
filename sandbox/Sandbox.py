@@ -6,7 +6,7 @@ from prod.objects.StockPortfolio import StockPortfolio
 from prod.repository.ConfigRepository import ConfigRepository
 
 # stock_repo = StockRepository(ApiService(ConfigRepository()))
-# print (stock_repo.listen_for_stock_price_updates(["twtr"], lambda live_stock_update: print(live_stock_update)))
+# print (stock_repo.listen_for_stock_price_updates(["AAPL"], lambda live_stock_update: print(live_stock_update)))
 
 print("Hello World!")
 # print(f'{{"type":"subscribe","symbol":"{ticker}"}}')
@@ -35,8 +35,8 @@ stock_grant_3 = StockGrant("qppl", 700, 70.50)
 
 
 # dict = {}
-# dict["twtr"] = StockGrantCollection("twtr")
-# twtrGrantCollection = dict.get("twtr")
+# dict["AAPL"] = StockGrantCollection("AAPL")
+# AAPLGrantCollection = dict.get("AAPL")
 # twtrGrantCollection.add_stock_grant(stock_grant_1)
 # twtrGrantCollection.add_stock_grant(stock_grant_2)
 # dict["twtr"] = twtrGrantCollection
