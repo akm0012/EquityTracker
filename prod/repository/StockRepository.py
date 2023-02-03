@@ -15,7 +15,7 @@ class StockRepository:
 
     def is_finnhub_api_key_valid(self, api_key: str) -> bool:
         try:
-            self.api_service.get_stock("TWTR", api_key)
+            self.api_service.get_stock("AAPL", api_key)
         except KeyError:
             return False
         return True
