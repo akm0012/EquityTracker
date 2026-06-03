@@ -192,31 +192,33 @@ def curses_main(stdscr):
 
     stdscr.refresh()
 
-    # Create a dict of Windows and Ticker symbols and update it when live updates come in
-    # This holds {TWTR: Window}, where the Window is the "View" that will be written to whenever a TWTR update happens.
-    stock_window_dict = {}
+    # Pair each row's grant collection with its own window. We key by row (not ticker)
+    # because a single ticker can span multiple rows when grants are split into groups.
+    row_windows = []  # list of (StockGrantCollection, window)
 
-    # Create windows for all the Stocks in the Portfolio
+    # Create windows for all the rows in the Portfolio
     window_row = 1
     for stock_grant_collection in portfolio.get_all_stock_grant_collections():
-        ticker_symbol = stock_grant_collection.ticker
         width = curses.COLS - 1  # The entire width of the window
         # Window size = h, w.  Location = y, x
         stock_row_window = curses.newwin(1, width, window_row, 0)
         window_row += 1
-        stock_window_dict[ticker_symbol] = stock_row_window
+        row_windows.append((stock_grant_collection, stock_row_window))
 
     stock_repo.listen_for_portfolio_updates(
-        portfolio, lambda live_stock_update: update_ui_with_live_stock_info(portfolio, stock_window_dict, live_stock_update))
+        portfolio, lambda live_stock_update: update_ui_with_live_stock_info(portfolio, row_windows, live_stock_update))
 
     # This line never seems to be hit...
 
 
-def update_ui_with_live_stock_info(portfolio: StockPortfolio, stock_window_dict, update: LiveStockInfo):
-    stock_window = stock_window_dict[update.ticker]
-    stock_window.clear()
-    update_stock_window_with_new_data(stock_window, update, portfolio)
-    stock_window.refresh()
+def update_ui_with_live_stock_info(portfolio: StockPortfolio, row_windows, update: LiveStockInfo):
+    # A price update is per-ticker, so refresh every row that tracks this ticker.
+    for stock_grant_collection, stock_window in row_windows:
+        if stock_grant_collection.ticker != update.ticker:
+            continue
+        stock_window.clear()
+        update_stock_window_with_new_data(stock_window, update, stock_grant_collection, portfolio)
+        stock_window.refresh()
 
 
 # Reminder, this is what it should look like.
@@ -225,13 +227,12 @@ def update_ui_with_live_stock_info(portfolio: StockPortfolio, stock_window_dict,
 #
 def update_stock_window_with_new_data(stock_window,
                                       stock_update: LiveStockInfo,
+                                      stock_grant_collection: StockGrantCollection,
                                       stock_portfolio: StockPortfolio):
     GREEN = curses.color_pair(1)
     RED = curses.color_pair(2)
 
     ticker = stock_update.ticker
-
-    stock_grant_collection = stock_portfolio.get_stock_grant_collection(ticker)
 
     # Add the ticker at the beginning
     stock_window.addstr(0, 0, f"{ticker}")
@@ -262,13 +263,12 @@ def update_stock_window_with_new_data(stock_window,
     max_grant_count = stock_portfolio.get_max_grant_count()
     if max_grant_count != 0:
         total_column = max_grant_count + 2
-        total_grant_value = stock_portfolio.get_total_stock_value(ticker, stock_update.current_price)
+        # Totals are scoped to this row's grants only, so split rows vest independently.
+        total_grant_value = stock_grant_collection.get_total_value(stock_update.current_price)
         total_grant_value_str = "${:,.2f}".format(total_grant_value)
 
-        # Todo: This is where things may break if I didn't do something right. Should prob write a test.
         if total_grant_value > 0:
-            # next_vest_amount_str = total_grant_value/total_vest_periods_left
-            next_vest_amount_str = stock_portfolio.get_next_vest_value(ticker, current_price)
+            next_vest_amount_str = stock_grant_collection.get_next_vest_value(current_price)
             total_grant_value_str += " (${:,.2f})".format(next_vest_amount_str)
 
         stock_window.addstr(0, get_x_coord_for_column(total_column), total_grant_value_str)

@@ -41,10 +41,27 @@ stock_3 = AAPL,3000,150.23
 stock_4 = SPY,0,0
 stock_5 = RIVN,0,0
 ```
+Each grant entry is `TICKER,SHARES,GRANT_PRICE,VESTS_LEFT`.
+
 This example above indicates:
 1. You have a single grant of TWTR where you were granted 1000 shares at $44.90.
 2. You have 2 grants from AAPL. One grant of 500 shares at $50.23 and another grant of 3000 shares at $150.23.
 3. You also want to monitor SPY and RIVN, but you do not have any stock grants with them.
+
+### What if two grants of the same stock vest on different schedules?
+By default, all grants of the same ticker are combined onto a single row (and their next-vest
+estimate is summed). If two grants vest on independent schedules — for example a second grant
+that doesn't start vesting until the first one finishes — combining them overstates your next
+vest. To put a grant on its own row, add an optional 5th field: a **group label**. Grants that
+share a ticker but have different group labels each get their own row with independent totals:
+```
+[DATABASE]
+stock_1 = RDDT,357,216.99,2
+stock_2 = RDDT,399,147.86,2,b
+```
+Here the two RDDT grants render as separate rows, so each row's value, percent change, and
+next-vest amount are calculated independently. Grants with no label (or the same label) are
+still combined as before.
 
 ### Can I use this app to monitor my investment stock portfolio?  
 Depends 🙂. If you have a super simple portfolio it may be manageable, but if you make frequent stock purchases it will 

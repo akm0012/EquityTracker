@@ -1,6 +1,5 @@
 from prod.objects.StockGrant import StockGrant
 from prod.objects.StockGrantCollection import StockGrantCollection
-from prod.util import MathUtil
 
 
 class StockPortfolio:
@@ -10,26 +9,45 @@ class StockPortfolio:
     def __init__(self):
         self.stock_grant_collection_dict = {}
 
-    def add_stock_grant(self, stock_grant: StockGrant):
-        ticker = stock_grant.ticker
+    """
+    The key a grant is filed under. Grants with no group label key by ticker (so they all
+    combine onto one row, preserving the original behavior). A group label gives the grant
+    its own row, separate from other grants of the same ticker.
+    """
+    @staticmethod
+    def _row_key(stock_grant: StockGrant) -> str:
+        if stock_grant.group:
+            return f"{stock_grant.ticker}::{stock_grant.group}"
+        return stock_grant.ticker
 
-        # Check if there is already a Stock with that Key
-        if self.stock_grant_collection_dict.keys().__contains__(ticker):
+    def add_stock_grant(self, stock_grant: StockGrant):
+        row_key = self._row_key(stock_grant)
+
+        # Check if there is already a row with that key
+        if self.stock_grant_collection_dict.keys().__contains__(row_key):
             # If so, get the current Stock Grant Collection and add this grant to it
-            existing_stock_grant_collection = self.stock_grant_collection_dict[ticker]
+            existing_stock_grant_collection = self.stock_grant_collection_dict[row_key]
             existing_stock_grant_collection.add_stock_grant(stock_grant)
-            self.stock_grant_collection_dict[ticker] = existing_stock_grant_collection
+            self.stock_grant_collection_dict[row_key] = existing_stock_grant_collection
         else:
             # If not, create a new Stock Grant Collection with the given grant
-            stock_grant_collection = StockGrantCollection(ticker)
+            stock_grant_collection = StockGrantCollection(stock_grant.ticker, stock_grant.group)
             stock_grant_collection.add_stock_grant(stock_grant)
-            self.stock_grant_collection_dict[ticker] = stock_grant_collection
+            self.stock_grant_collection_dict[row_key] = stock_grant_collection
 
     def get_all_stock_grant_collections(self) -> [StockGrantCollection]:
         return self.stock_grant_collection_dict.values()
 
+    """
+    Returns the unique ticker symbols across all rows. Multiple rows can share a ticker
+    (when grants are split onto separate rows), so this de-dupes for price subscriptions.
+    """
     def get_all_stock_ticker_symbols(self) -> [str]:
-        return self.stock_grant_collection_dict.keys()
+        tickers = []
+        for collection in self.stock_grant_collection_dict.values():
+            if collection.ticker not in tickers:
+                tickers.append(collection.ticker)
+        return tickers
 
     def get_stock_grant_collection(self, ticker: str) -> StockGrantCollection:
         # todo: error check
@@ -51,30 +69,3 @@ class StockPortfolio:
             max_grant_count = max(max_grant_count, len(value.stock_grant_list))
 
         return max_grant_count
-
-    """
-    Gets the total value of all the grants combined. 
-    """
-    def get_total_stock_value(self, stock_ticker: str, current_stock_price: float) -> float:
-        grant_list = self.get_stock_grant_collection(stock_ticker).stock_grant_list
-        return MathUtil.calculate_multi_grant_dollar_amount(current_stock_price, grant_list)
-
-    """
-    Gets the value of the next vest. 
-    
-    I.E. 
-    $10,000 vested evenly over 4 years. (16 total vests) = $625
-    $10,000 vested evenly over 1 year. (4 total vests) =  $2,500
-    Next vest = $625 + $2,500 = $3,125
-    """
-    def get_next_vest_value(self, ticker: str, current_price: float) -> float:
-
-        grants = self.get_stock_grant_collection(ticker)
-
-        next_vest_total = 0.0
-
-        for grant in grants.stock_grant_list:
-            next_grant_vest = (grant.count * current_price) / grant.vests_left
-            next_vest_total += next_grant_vest
-
-        return next_vest_total
