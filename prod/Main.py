@@ -97,6 +97,36 @@ def process_arguments():
     return args
 
 
+def parse_non_negative_int(raw_value: str) -> int:
+    try:
+        value = int(raw_value.strip())
+    except ValueError:
+        raise ValueError(Strings.NON_NEGATIVE_INT_ERROR)
+    if value < 0:
+        raise ValueError(Strings.NON_NEGATIVE_INT_ERROR)
+    return value
+
+
+def parse_positive_float(raw_value: str) -> float:
+    normalized_value = raw_value.strip()
+    if normalized_value.startswith('$'):
+        normalized_value = normalized_value[1:]
+    try:
+        value = float(normalized_value.replace(",", ""))
+    except ValueError:
+        raise ValueError(Strings.POSITIVE_PRICE_ERROR)
+    if value <= 0:
+        raise ValueError(Strings.POSITIVE_PRICE_ERROR)
+    return value
+
+
+def normalize_optional_group(raw_value: str) -> str:
+    group = raw_value.strip()
+    if "," in group:
+        raise ValueError(Strings.GROUP_LABEL_COMMA_ERROR)
+    return group
+
+
 def get_api_token_from_user():
     # If there is already a token, we can skip this.
     if config_repo.get_finnhub_api_key() != "":
@@ -105,7 +135,7 @@ def get_api_token_from_user():
 
     is_token_valid = False
     while not is_token_valid:
-        finnhub_api_token = input(Strings.FINNHUB_INPUT_MSG)
+        finnhub_api_token = input(Strings.FINNHUB_INPUT_MSG).strip()
         is_api_key_valid = stock_repo.is_finnhub_api_key_valid(finnhub_api_token)
         if is_api_key_valid:
             is_token_valid = True
@@ -134,9 +164,16 @@ def get_stock_portfolio_from_user() -> StockPortfolio:
 
 def get_stock_grants_from_user(portfolio, stock_ticker):
     more_grants_to_add = True
+    has_existing_grants_for_ticker = False
     while more_grants_to_add:
         # Get the grant number
         grant_count = get_grant_count_from_user()
+
+        if grant_count == 0:
+            stock_grant = StockGrant(stock_ticker, 0, 0.0, 0)
+            print(Strings.ADDING_WATCH_ONLY_STOCK % stock_ticker)
+            portfolio.add_stock_grant(stock_grant)
+            return
 
         # Get price of stock for grant
         grant_price = get_grant_price(grant_count)
@@ -144,11 +181,14 @@ def get_stock_grants_from_user(portfolio, stock_ticker):
         # Get number of vests left for this Grant
         vests_left = get_num_of_vests_left_from_user()
 
+        group = get_grant_group_from_user(stock_ticker, has_existing_grants_for_ticker)
+
         # Add stock grant to Portfolio
-        stock_grant = StockGrant(stock_ticker, grant_count, grant_price, vests_left)
+        stock_grant = StockGrant(stock_ticker, grant_count, grant_price, vests_left, group)
         print(f"Adding {stock_grant} to portfolio.")
         portfolio.add_stock_grant(stock_grant)
-        more_grants_to_add = grant_count != 0 and prompt_user_yes_or_no(Strings.MORE_GRANTS_TO_ADD % stock_ticker)
+        has_existing_grants_for_ticker = True
+        more_grants_to_add = prompt_user_yes_or_no(Strings.MORE_GRANTS_TO_ADD % stock_ticker)
 
 
 def get_grant_price(grant_count) -> float:
@@ -156,15 +196,14 @@ def get_grant_price(grant_count) -> float:
     if grant_count > 0:
         is_grant_price_valid = False
         while not is_grant_price_valid:
-            grant_price = input(Strings.GET_GRANTS_COST_INPUT).strip()
-            if grant_price.startswith('$'):
-                grant_price = grant_price[1:]
+            grant_price = input(Strings.GET_GRANTS_COST_INPUT)
             try:
-                grant_price = float(grant_price)
+                grant_price = parse_positive_float(grant_price)
                 is_grant_price_valid = True
-            except:
-                print(Strings.NOT_A_NUM_ERROR)
+            except ValueError as error:
+                print(error)
     return grant_price
+
 
 def get_num_of_vests_left_from_user() -> int:
     is_num_of_vests_valid = False
@@ -172,10 +211,10 @@ def get_num_of_vests_left_from_user() -> int:
     while not is_num_of_vests_valid:
         vest_count = input(Strings.GET_NUM_OF_VESTS_INPUT)
         try:
-            vest_count = int(vest_count)
+            vest_count = parse_non_negative_int(vest_count)
             is_num_of_vests_valid = True
-        except:
-            print(Strings.NOT_A_NUM_ERROR)
+        except ValueError as error:
+            print(error)
     return vest_count
 
 
@@ -185,11 +224,22 @@ def get_grant_count_from_user() -> int:
     while not is_grant_count_valid:
         grant_count = input(Strings.GET_GRANTS_INPUT)
         try:
-            grant_count = int(grant_count)
+            grant_count = parse_non_negative_int(grant_count)
             is_grant_count_valid = True
-        except:
-            print(Strings.NOT_A_NUM_ERROR)
+        except ValueError as error:
+            print(error)
     return grant_count
+
+
+def get_grant_group_from_user(stock_ticker: str, has_existing_grants_for_ticker: bool = False) -> str:
+    group_prompt = Strings.GET_GRANT_GROUP_INPUT if not has_existing_grants_for_ticker \
+        else Strings.GET_ADDITIONAL_GRANT_GROUP_INPUT % stock_ticker
+    while True:
+        group = input(group_prompt)
+        try:
+            return normalize_optional_group(group)
+        except ValueError as error:
+            print(error)
 
 
 def get_stock_ticker_from_user() -> str:
@@ -206,13 +256,52 @@ def get_stock_ticker_from_user() -> str:
 
 def prompt_user_yes_or_no(yes_or_no_prompt: str) -> bool:
     while True:
-        yes_or_no_input = input(yes_or_no_prompt)
+        yes_or_no_input = input(yes_or_no_prompt).strip()
+        if yes_or_no_input == "":
+            return True
         if yes_or_no_input == 'Y' or yes_or_no_input == 'y' or yes_or_no_input.lower() == 'yes':
             return True
         elif yes_or_no_input == 'N' or yes_or_no_input == 'n' or yes_or_no_input.lower() == 'no':
             return False
         else:
             print(Strings.YES_OR_NO_ERROR)
+
+
+def render_portfolio_summary(portfolio: StockPortfolio, config_path: str) -> str:
+    summary_lines = [
+        Strings.SAVED_PORTFOLIO_MSG % config_path,
+        "",
+        Strings.PORTFOLIO_SUMMARY_HEADER,
+    ]
+
+    for grant in portfolio.get_all_stock_grants():
+        if grant.count == 0:
+            summary_lines.append(Strings.PORTFOLIO_SUMMARY_WATCH_ONLY % grant.ticker)
+            continue
+
+        grant_summary = Strings.PORTFOLIO_SUMMARY_GRANT % (
+            grant.ticker,
+            grant.count,
+            grant.price,
+            grant.vests_left)
+        if grant.group:
+            grant_summary += Strings.PORTFOLIO_SUMMARY_GROUP % grant.group
+        summary_lines.append(grant_summary)
+
+    return "\n".join(summary_lines)
+
+
+def print_setup_summary(portfolio: StockPortfolio):
+    print(render_portfolio_summary(portfolio, config_repo.get_config_file_location()))
+
+
+def prompt_start_tracker() -> bool:
+    return prompt_user_yes_or_no(Strings.START_TRACKER_PROMPT)
+
+
+def print_config_parse_errors(parse_errors: list[str]):
+    for parse_error in parse_errors:
+        print(Strings.CONFIG_ROW_PARSE_ERROR % parse_error)
 
 
 # Gets the X coordinate for a specific column
@@ -455,18 +544,20 @@ if __name__ == '__main__':
     config_repo = ConfigRepository()
     stock_repo = StockRepository(ApiService(config_repo))
 
+    config_repo.ensure_config_file()
+
     # Look for command line arguments, if we find any, cancel execution
     process_arguments()
     if len(sys.argv) > 1:
         sys.exit()
 
-    # Init the config file if it is not there
-    if not config_repo.does_config_file_exist():
-        log("Creating Empty Config File")
-        config_repo.create_empty_config_file()
+    portfolio, parse_errors = config_repo.get_stock_portfolio_with_errors()
+    print_config_parse_errors(parse_errors)
+    has_api_token = config_repo.get_finnhub_api_key() != ""
+    has_portfolio = len(portfolio.get_all_stock_grants()) > 0
 
     # Check is there is already a portfolio
-    if config_repo.is_config_file_valid() and len(config_repo.get_stock_portfolio().get_all_stock_grants()) > 0:
+    if has_api_token and has_portfolio:
         print(Strings.USING_PORTFOLIO_MSG)
 
     else:
@@ -474,12 +565,17 @@ if __name__ == '__main__':
         print(Strings.WELCOME_MSG)
 
         # Step 2 - Get Finnhub API Token
-        get_api_token_from_user()
+        if not has_api_token:
+            get_api_token_from_user()
 
-        # Step 3 - Get Stocks / Grants
-        stock_portfolio_from_user = get_stock_portfolio_from_user()
-        # Save the portfolio in the config file
-        config_repo.save_stock_portfolio(stock_portfolio_from_user)
+        if not has_portfolio:
+            # Step 3 - Get Stocks / Grants
+            portfolio = get_stock_portfolio_from_user()
+            # Save the portfolio in the config file
+            config_repo.save_stock_portfolio(portfolio)
+            print_setup_summary(portfolio)
+            if not prompt_start_tracker():
+                sys.exit()
 
     # Todo: show a countdown timer and maybe some instructions on how to exit
 # Todo: Disabled for now as I know how to exit

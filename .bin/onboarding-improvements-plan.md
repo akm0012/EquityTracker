@@ -12,6 +12,7 @@ The target outcome is:
 - Users see a clear setup summary before curses takes over the terminal.
 - Users can create split same-ticker grant rows during onboarding with the existing optional group label.
 - Invalid or partial `config.ini` files recover gracefully instead of failing in surprising places.
+- The GitHub README gives first-time visitors enough context to install, configure, run, and safely edit the app.
 
 ## Non-Goals
 
@@ -100,6 +101,19 @@ Expected behavior:
 - Missing token value: prompt for token.
 - Empty database: run portfolio onboarding.
 - Malformed stock rows: skip bad rows with a warning, preserve valid rows, and prompt if no valid rows remain.
+
+### 7. GitHub README can be clearer for new users
+
+The README explains the app, but it should do more work for someone arriving cold from GitHub. It should make the value proposition, prerequisites, setup path, config examples, screenshots, command reference, and troubleshooting easy to scan.
+
+Expected behavior:
+
+- A GitHub visitor can understand what the app does from the first viewport.
+- The quick start clearly separates first-time setup from normal usage.
+- The Finnhub token requirement is visible before the user runs the app.
+- `config.ini` examples cover watch-only stocks, grants, and optional group labels.
+- The display explanation links terms like "next vest", "day range", and "gain/loss" back to config fields.
+- Troubleshooting covers common first-run failures: invalid token, invalid ticker, no live updates outside market hours, narrow terminal clipping, and auth/config file location.
 
 ## Proposed Code Changes
 
@@ -291,6 +305,41 @@ Acceptance criteria:
 - Prompt wording matches README concepts.
 - Error messages tell the user exactly how to recover.
 
+### H. Improve the GitHub README
+
+File: `README.md`
+
+Recommended structure:
+
+1. Short product summary and screenshot.
+2. Feature list focused on what the user gets.
+3. Requirements:
+   - Python 3.
+   - Finnhub API token.
+   - UTF-8 terminal.
+4. Quick start:
+   - Clone.
+   - Run `make run`.
+   - Enter token.
+   - Add a watch-only stock or grant.
+5. Normal usage:
+   - `make run`.
+   - `Ctrl + C` to quit.
+6. Config guide:
+   - Explain every field.
+   - Include grant, watch-only, multi-grant, and group-label examples.
+7. Reading the terminal display.
+8. CLI commands.
+9. Troubleshooting.
+10. Development and tests.
+
+Acceptance criteria:
+
+- A user can configure a watch-only stock without reading the full FAQ.
+- A user can configure two independent same-ticker grants without guessing the group label syntax.
+- The token setup path is explicit and avoids suggesting that secrets should be committed.
+- Screenshots remain near the top but do not interrupt setup instructions.
+
 ## Test Plan
 
 ### Unit tests
@@ -317,6 +366,14 @@ Update or add `test/test_Main_onboarding.py`:
 Update `test/objects/test_StockGrant.py` if needed:
 
 - Group labels with whitespace are normalized before `StockGrant` construction or during prompt parsing, not necessarily in the object itself.
+
+README review checklist:
+
+- First viewport states what the project does and shows what it looks like.
+- Quick start is runnable from a fresh clone.
+- Config examples match parser behavior.
+- No real API tokens or personal portfolio values are added.
+- Troubleshooting answers the most likely first-run questions.
 
 ### Interactive smoke tests
 
@@ -371,7 +428,8 @@ Expected:
 6. Add setup summary and start confirmation.
 7. Add malformed-row recovery.
 8. Polish strings and README snippets if prompt wording changes materially.
-9. Run the full test suite.
+9. Add a README improvement pass for GitHub-first visitors.
+10. Run the full test suite.
 
 ## Risk Notes
 

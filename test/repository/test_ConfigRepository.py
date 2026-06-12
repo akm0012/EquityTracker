@@ -1,4 +1,5 @@
 import os
+import tempfile
 from unittest import TestCase
 
 from prod.objects.StockGrant import StockGrant
@@ -69,6 +70,51 @@ class TestConfigRepository(TestCase):
 
     # endregion
 
+    # region ensure_config_file tests
+
+    def test_ensure_config_file_creates_missing_file(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_repo = ConfigRepository()
+            config_repo.config_file_location = os.path.join(temp_dir, "config.ini")
+
+            config_repo.ensure_config_file()
+
+            self.assertTrue(config_repo.does_config_file_exist())
+            self.assertTrue(config_repo.is_config_file_valid())
+            self.assertEqual("", config_repo.get_finnhub_api_key())
+
+    def test_ensure_config_file_repairs_missing_api_tokens(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_path = os.path.join(temp_dir, "config.ini")
+            with open(config_path, "w") as config_file:
+                config_file.write("[DATABASE]\nSTOCK_1 = AAPL,10,100.00,4\n")
+
+            config_repo = ConfigRepository()
+            config_repo.config_file_location = config_path
+
+            config_repo.ensure_config_file()
+
+            self.assertTrue(config_repo.is_config_file_valid())
+            self.assertEqual("", config_repo.get_finnhub_api_key())
+            self.assertEqual(1, len(config_repo.get_stock_portfolio().get_all_stock_grants()))
+
+    def test_ensure_config_file_repairs_missing_database(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_path = os.path.join(temp_dir, "config.ini")
+            with open(config_path, "w") as config_file:
+                config_file.write("[API_TOKENS]\nFINN_HUB_API_KEY = api_key_test\n")
+
+            config_repo = ConfigRepository()
+            config_repo.config_file_location = config_path
+
+            config_repo.ensure_config_file()
+
+            self.assertTrue(config_repo.is_config_file_valid())
+            self.assertEqual("api_key_test", config_repo.get_finnhub_api_key())
+            self.assertEqual(0, len(config_repo.get_stock_portfolio().get_all_stock_grants()))
+
+    # endregion
+
     # region get_finnhub_api_key tests
 
     def test_get_finnhub_api_key_empty(self):
@@ -80,6 +126,16 @@ class TestConfigRepository(TestCase):
         config_repo = ConfigRepository()
         config_repo.config_file_location = self.__get_path_to_test_file("test_config_1.ini")
         self.assertEqual(config_repo.get_finnhub_api_key(), "api_key_test")
+
+    def test_save_finnhub_api_key_creates_missing_config(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_repo = ConfigRepository()
+            config_repo.config_file_location = os.path.join(temp_dir, "config.ini")
+
+            config_repo.save_finnhub_api_key("new_key")
+
+            self.assertTrue(config_repo.does_config_file_exist())
+            self.assertEqual("new_key", config_repo.get_finnhub_api_key())
 
     # endregion
 
@@ -130,6 +186,44 @@ class TestConfigRepository(TestCase):
         self.assertEqual(appl_stock_grants.stock_grant_list[0].ticker, "APPL")
         self.assertEqual(appl_stock_grants.stock_grant_list[0].count, 50)
         self.assertEqual(appl_stock_grants.stock_grant_list[0].price, 100.50)
+
+    def test_get_stock_portfolio_with_errors_skips_malformed_rows(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_path = os.path.join(temp_dir, "config.ini")
+            with open(config_path, "w") as config_file:
+                config_file.write("[API_TOKENS]\n")
+                config_file.write("FINN_HUB_API_KEY = api_key_test\n\n")
+                config_file.write("[DATABASE]\n")
+                config_file.write("STOCK_1 = AAPL,10,100.00,4\n")
+                config_file.write("STOCK_2 = BROKEN,10\n")
+
+            config_repo = ConfigRepository()
+            config_repo.config_file_location = config_path
+
+            portfolio, errors = config_repo.get_stock_portfolio_with_errors()
+
+            self.assertEqual(1, len(portfolio.get_all_stock_grants()))
+            self.assertEqual("AAPL", portfolio.get_all_stock_grants()[0].ticker)
+            self.assertEqual(1, len(errors))
+            self.assertIn("stock_2", errors[0])
+
+    # endregion
+
+    # region clear_stocks tests
+
+    def test_clear_stocks_repairs_missing_database(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_path = os.path.join(temp_dir, "config.ini")
+            with open(config_path, "w") as config_file:
+                config_file.write("[API_TOKENS]\nFINN_HUB_API_KEY = api_key_test\n")
+
+            config_repo = ConfigRepository()
+            config_repo.config_file_location = config_path
+
+            config_repo.clear_stocks()
+
+            self.assertTrue(config_repo.is_config_file_valid())
+            self.assertEqual(0, len(config_repo.get_stock_portfolio().get_all_stock_grants()))
 
     # endregion
 
@@ -184,6 +278,28 @@ class TestConfigRepository(TestCase):
         self.assertEqual(stock_grant_3.vests_left, portfolio2_stock_3.vests_left)
 
         config_repo.delete_config_file()
+
+    def test_save_stock_portfolio_removes_stale_rows(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_path = os.path.join(temp_dir, "config.ini")
+            with open(config_path, "w") as config_file:
+                config_file.write("[API_TOKENS]\n")
+                config_file.write("FINN_HUB_API_KEY = api_key_test\n\n")
+                config_file.write("[DATABASE]\n")
+                config_file.write("STOCK_1 = AAPL,10,100.00,4\n")
+                config_file.write("STOCK_2 = RDDT,20,200.00,4\n")
+
+            config_repo = ConfigRepository()
+            config_repo.config_file_location = config_path
+
+            portfolio = StockPortfolio()
+            portfolio.add_stock_grant(StockGrant("AAPL", 5, 90.00, 2))
+            config_repo.save_stock_portfolio(portfolio)
+
+            saved_grants = config_repo.get_stock_portfolio().get_all_stock_grants()
+            self.assertEqual(1, len(saved_grants))
+            self.assertEqual("AAPL", saved_grants[0].ticker)
+            self.assertEqual(5, saved_grants[0].count)
 
     # endregion
 
