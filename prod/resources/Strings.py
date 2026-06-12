@@ -38,4 +38,22 @@ NOT_A_NUM_ERROR = "That's not a valid number. Please try again..."
 CURRENT = "Current"
 GRANT_HEADER = "Grant %s"
 TOTAL = "Total"
+DAY_RANGE = "Day Range"
+GAIN_LOSS = "Gain/Loss"
+PORTFOLIO_TOTAL = "Portfolio: ${:,.2f}"
+PORTFOLIO_DAY_CHANGE = " ({}${:,.2f} today)"
+
+# Connection status keys emitted by the network layer (see ApiService).
+CONN_STATUS_CONNECTING = "connecting"
+CONN_STATUS_LIVE = "live"
+CONN_STATUS_RECONNECTING = "reconnecting"
+CONN_STATUS_DISCONNECTED = "disconnected"
+
+# Display text for each connection status key.
+CONN_STATUS_TEXT = {
+    CONN_STATUS_CONNECTING: "○ connecting…",
+    CONN_STATUS_LIVE: "● live",
+    CONN_STATUS_RECONNECTING: "○ reconnecting…",
+    CONN_STATUS_DISCONNECTED: "✕ disconnected",
+}
 

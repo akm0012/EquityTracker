@@ -1,4 +1,5 @@
 import argparse
+import locale
 import signal
 import sys
 import curses
@@ -13,8 +14,64 @@ from prod.objects.StockPortfolio import StockPortfolio
 from prod.repository.ConfigRepository import ConfigRepository
 from prod.repository.StockRepository import StockRepository
 from prod.resources import Strings
+from prod.util import ChartUtil
 from prod.util import MathUtil
 from prod.util.LogUtil import log
+
+# Layout for the trailing visualizations, measured from the Total column.
+GAUGE_OFFSET_FROM_TOTAL = 28
+GAIN_OFFSET_FROM_GAUGE = 36
+GAUGE_WIDTH = 10
+
+
+class TickerSession:
+    """Per-ticker data cached for the life of the session (since the app was opened)."""
+
+    def __init__(self):
+        self.day_high = 0.0
+        self.day_low = 0.0
+        self.open_price = 0.0
+        self.previous_close = 0.0
+        self.latest_price = 0.0
+
+    def record(self, update: LiveStockInfo):
+        # The day OHLC is only present on the initial REST quote; carry it forward.
+        if update.day_high:
+            self.day_high = update.day_high
+        if update.day_low:
+            self.day_low = update.day_low
+        if update.open_price:
+            self.open_price = update.open_price
+        if update.previous_close_price:
+            self.previous_close = update.previous_close_price
+
+        price = update.current_price
+        if price <= 0:
+            return
+
+        self.latest_price = price
+
+        # Keep the day range honest as live ticks move beyond the morning quote.
+        if self.day_high == 0 or price > self.day_high:
+            self.day_high = price
+        if self.day_low == 0 or price < self.day_low:
+            self.day_low = price
+
+
+def safe_addstr(window, y: int, x: int, text: str, attr: int = 0):
+    """Write text but clip to the window so far-right visuals never crash a narrow terminal."""
+    if not text:
+        return
+    max_y, max_x = window.getmaxyx()
+    if y >= max_y or x < 0 or x >= max_x:
+        return
+    available = max_x - x - 1
+    if available <= 0:
+        return
+    try:
+        window.addstr(y, x, text[:available], attr)
+    except curses.error:
+        pass
 
 
 def process_arguments():
@@ -99,8 +156,8 @@ def get_grant_price(grant_count) -> float:
     if grant_count > 0:
         is_grant_price_valid = False
         while not is_grant_price_valid:
-            grant_price = input(Strings.GET_GRANTS_COST_INPUT)
-            if grant_price[0] == '$':
+            grant_price = input(Strings.GET_GRANTS_COST_INPUT).strip()
+            if grant_price.startswith('$'):
                 grant_price = grant_price[1:]
             try:
                 grant_price = float(grant_price)
@@ -139,8 +196,7 @@ def get_stock_ticker_from_user() -> str:
     is_stock_valid = False
     stock_ticker = ""
     while not is_stock_valid:
-        stock_ticker = input(Strings.GET_STOCK_INPUT_MSG)
-        stock_ticker.upper()
+        stock_ticker = input(Strings.GET_STOCK_INPUT_MSG).strip().upper()
         if stock_repo.is_ticker_symbol_valid(stock_ticker):
             is_stock_valid = True
         else:
@@ -175,11 +231,22 @@ def get_x_coord_for_column(column: int) -> int:
         return current_header_x + header_1_width + ((column - 2) * header_normal_padding)
 
 
+# X coordinate of the day-range gauge, just past the Total column.
+def get_gauge_x(max_grant_count: int) -> int:
+    return get_x_coord_for_column(max_grant_count + 2) + GAUGE_OFFSET_FROM_TOTAL
+
+
+# X coordinate of the unrealized gain/loss column, just past the gauge.
+def get_gain_x(max_grant_count: int) -> int:
+    return get_gauge_x(max_grant_count) + GAIN_OFFSET_FROM_GAUGE
+
+
 def curses_main(stdscr):
     # Use the default terminal colors! Cool!
     curses.use_default_colors()
     curses.init_pair(1, curses.COLOR_GREEN, -1)  # -1 for default color
     curses.init_pair(2, curses.COLOR_RED, -1)
+    curses.init_pair(3, curses.COLOR_YELLOW, -1)
 
     # Hide the cursor
     curs_set(0)
@@ -205,20 +272,44 @@ def curses_main(stdscr):
         window_row += 1
         row_windows.append((stock_grant_collection, stock_row_window))
 
+    # A blank line then a footer row for the portfolio-wide totals (if there's room).
+    footer_window = None
+    if window_row + 1 < curses.LINES:
+        footer_window = curses.newwin(1, curses.COLS - 1, window_row + 1, 0)
+
+    # A connection status line below the footer (if there's room).
+    status_window = None
+    if window_row + 2 < curses.LINES:
+        status_window = curses.newwin(1, curses.COLS - 1, window_row + 2, 0)
+
+    # Cached per-ticker session data (price history, day range, latest price...).
+    ticker_state = {}
+
     stock_repo.listen_for_portfolio_updates(
-        portfolio, lambda live_stock_update: update_ui_with_live_stock_info(portfolio, row_windows, live_stock_update))
+        portfolio,
+        lambda live_stock_update: update_ui_with_live_stock_info(
+            portfolio, row_windows, ticker_state, footer_window, live_stock_update),
+        lambda status: draw_status(status_window, status))
 
     # This line never seems to be hit...
 
 
-def update_ui_with_live_stock_info(portfolio: StockPortfolio, row_windows, update: LiveStockInfo):
+def update_ui_with_live_stock_info(portfolio: StockPortfolio, row_windows, ticker_state,
+                                   footer_window, update: LiveStockInfo):
+    session = ticker_state.setdefault(update.ticker, TickerSession())
+    session.record(update)
+
     # A price update is per-ticker, so refresh every row that tracks this ticker.
     for stock_grant_collection, stock_window in row_windows:
         if stock_grant_collection.ticker != update.ticker:
             continue
         stock_window.clear()
-        update_stock_window_with_new_data(stock_window, update, stock_grant_collection, portfolio)
+        update_stock_window_with_new_data(stock_window, update, stock_grant_collection, portfolio, session)
         stock_window.refresh()
+
+    # Refresh the portfolio total footer with every ticker's latest known price.
+    if footer_window is not None:
+        draw_footer(footer_window, portfolio, ticker_state)
 
 
 # Reminder, this is what it should look like.
@@ -228,21 +319,22 @@ def update_ui_with_live_stock_info(portfolio: StockPortfolio, row_windows, updat
 def update_stock_window_with_new_data(stock_window,
                                       stock_update: LiveStockInfo,
                                       stock_grant_collection: StockGrantCollection,
-                                      stock_portfolio: StockPortfolio):
+                                      stock_portfolio: StockPortfolio,
+                                      session: TickerSession):
     GREEN = curses.color_pair(1)
     RED = curses.color_pair(2)
 
     ticker = stock_update.ticker
 
     # Add the ticker at the beginning
-    stock_window.addstr(0, 0, f"{ticker}")
+    safe_addstr(stock_window, 0, 0, f"{ticker}")
 
     # Add the Current Price / percent change
     current_price = round(stock_update.current_price, 2)
     percent_change = MathUtil.calculate_percent_change(stock_update.previous_close_price, current_price)
     percent_color = GREEN if percent_change >= 0 else RED
-    stock_window.addstr(0, get_x_coord_for_column(1), "${:,.2f}".format(current_price))
-    stock_window.addstr(0, get_x_coord_for_column(1) + 9, f"({format(percent_change, '.2f')} %)", percent_color)
+    safe_addstr(stock_window, 0, get_x_coord_for_column(1), "${:,.2f}".format(current_price))
+    safe_addstr(stock_window, 0, get_x_coord_for_column(1) + 9, f"({format(percent_change, '.2f')} %)", percent_color)
 
     # Add the Grants
     stock_grant_column = 2
@@ -251,12 +343,12 @@ def update_stock_window_with_new_data(stock_window,
             continue
         current_grant_value = grant.count * stock_update.current_price
         current_grant_percent_change = MathUtil.calculate_grant_percent_change_2(stock_update.current_price, grant)
-        percent_color = GREEN if current_grant_percent_change >= 0 else RED
+        grant_color = GREEN if current_grant_percent_change >= 0 else RED
         column_x_coord = get_x_coord_for_column(stock_grant_column)
         current_grant_value_str = "${:,.2f}".format(current_grant_value)
-        stock_window.addstr(0, column_x_coord, current_grant_value_str)
-        stock_window.addstr(0, column_x_coord + len(current_grant_value_str) + 1,
-                            f"({format(current_grant_percent_change, '.2f')} %)", percent_color)
+        safe_addstr(stock_window, 0, column_x_coord, current_grant_value_str)
+        safe_addstr(stock_window, 0, column_x_coord + len(current_grant_value_str) + 1,
+                    f"({format(current_grant_percent_change, '.2f')} %)", grant_color)
         stock_grant_column += 1
 
     # Add the Total Column
@@ -271,27 +363,94 @@ def update_stock_window_with_new_data(stock_window,
             next_vest_amount_str = stock_grant_collection.get_next_vest_value(current_price)
             total_grant_value_str += " (${:,.2f})".format(next_vest_amount_str)
 
-        stock_window.addstr(0, get_x_coord_for_column(total_column), total_grant_value_str)
+        safe_addstr(stock_window, 0, get_x_coord_for_column(total_column), total_grant_value_str)
+
+    # Day range gauge: where today's price sits between its low and high.
+    gauge_str = ChartUtil.render_range_gauge(session.day_low, session.day_high, current_price, GAUGE_WIDTH)
+    safe_addstr(stock_window, 0, get_gauge_x(max_grant_count), gauge_str)
+
+    # Unrealized gain/loss: how much this row's grants are up/down since they were granted.
+    if not stock_grant_collection.is_tracking_stock_only:
+        unrealized_gain = stock_grant_collection.get_unrealized_gain(stock_update.current_price)
+        gain_color = GREEN if unrealized_gain >= 0 else RED
+        gain_arrow = "▲" if unrealized_gain >= 0 else "▼"
+        gain_str = "{} ${:,.2f}".format(gain_arrow, abs(unrealized_gain))
+        safe_addstr(stock_window, 0, get_gain_x(max_grant_count), gain_str, gain_color)
 
 
 def draw_headers(stdscr):
     max_grant_count = config_repo.get_stock_portfolio().get_max_grant_count()
-    stdscr.addstr(0, get_x_coord_for_column(1), Strings.CURRENT, curses.A_UNDERLINE)
+    safe_addstr(stdscr, 0, get_x_coord_for_column(1), Strings.CURRENT, curses.A_UNDERLINE)
 
-    if max_grant_count == 0:
+    if max_grant_count != 0:
+        # Add the "Grant #" Headers
+        for i in range(max_grant_count):
+            grant_header_text = Strings.GRANT_HEADER % (i + 1)
+            safe_addstr(stdscr, 0, get_x_coord_for_column(i + 2), grant_header_text, curses.A_UNDERLINE)
+        # Add the total Header
+        safe_addstr(stdscr, 0, get_x_coord_for_column(max_grant_count + 2), Strings.TOTAL, curses.A_UNDERLINE)
+
+    # Header for the day range gauge (shown for grants and watch-only rows).
+    safe_addstr(stdscr, 0, get_gauge_x(max_grant_count), Strings.DAY_RANGE, curses.A_UNDERLINE)
+    # The gain/loss column only applies to rows that actually hold grants.
+    if max_grant_count != 0:
+        safe_addstr(stdscr, 0, get_gain_x(max_grant_count), Strings.GAIN_LOSS, curses.A_UNDERLINE)
+
+
+def draw_footer(footer_window, stock_portfolio: StockPortfolio, ticker_state):
+    GREEN = curses.color_pair(1)
+    RED = curses.color_pair(2)
+
+    price_by_ticker = {ticker: state.latest_price
+                       for ticker, state in ticker_state.items() if state.latest_price}
+    prev_close_by_ticker = {ticker: state.previous_close
+                            for ticker, state in ticker_state.items() if state.previous_close}
+
+    total_value = stock_portfolio.get_total_portfolio_value(price_by_ticker)
+    if total_value <= 0:
+        return  # Watch-only portfolio: nothing to total up.
+
+    day_change = stock_portfolio.get_total_day_change(price_by_ticker, prev_close_by_ticker)
+
+    footer_window.clear()
+    total_text = Strings.PORTFOLIO_TOTAL.format(total_value)
+    safe_addstr(footer_window, 0, 0, total_text, curses.A_BOLD)
+
+    change_sign = "+" if day_change >= 0 else "-"
+    change_text = Strings.PORTFOLIO_DAY_CHANGE.format(change_sign, abs(day_change))
+    change_color = GREEN if day_change >= 0 else RED
+    safe_addstr(footer_window, 0, len(total_text), change_text, change_color)
+    footer_window.refresh()
+
+
+def draw_status(status_window, status_key):
+    if status_window is None:
         return
 
-    # Add the "Grant #" Headers
-    for i in range(max_grant_count):
-        grant_header_text = Strings.GRANT_HEADER % (i + 1)
-        stdscr.addstr(0, get_x_coord_for_column(i + 2), grant_header_text, curses.A_UNDERLINE)
-    # Add the total Header
-    stdscr.addstr(0, get_x_coord_for_column(max_grant_count + 2), Strings.TOTAL, curses.A_UNDERLINE)
+    GREEN = curses.color_pair(1)
+    RED = curses.color_pair(2)
+    YELLOW = curses.color_pair(3)
+
+    status_colors = {
+        Strings.CONN_STATUS_CONNECTING: YELLOW,
+        Strings.CONN_STATUS_LIVE: GREEN,
+        Strings.CONN_STATUS_RECONNECTING: YELLOW,
+        Strings.CONN_STATUS_DISCONNECTED: RED,
+    }
+    status_text = Strings.CONN_STATUS_TEXT.get(status_key, status_key)
+    status_color = status_colors.get(status_key, 0)
+
+    status_window.clear()
+    safe_addstr(status_window, 0, 0, status_text, status_color)
+    status_window.refresh()
 
 
 if __name__ == '__main__':
     # Hides the stack trace when you stop the program with control+c
     signal.signal(signal.SIGINT, lambda x, y: sys.exit(0))
+
+    # Use the terminal's locale so curses can render the unicode gauge/arrow glyphs.
+    locale.setlocale(locale.LC_ALL, "")
 
     config_repo = ConfigRepository()
     stock_repo = StockRepository(ApiService(config_repo))

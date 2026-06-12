@@ -36,3 +36,8 @@ class TestStockGrant(TestCase):
         self.assertEqual(stock_grant.price, 147.86)
         self.assertEqual(stock_grant.vests_left, 2)
         self.assertEqual(stock_grant.group, "b")
+
+    def test_create_from_config_ini_uppercases_ticker(self):
+        # A hand-edited lowercase ticker must normalize so it matches the live feed.
+        stock_grant = StockGrant.create_from_config_ini("rddt,399,147.86,2")
+        self.assertEqual(stock_grant.ticker, "RDDT")

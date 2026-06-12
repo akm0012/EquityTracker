@@ -88,6 +88,71 @@ class TestStockGrant(TestCase):
 
         self.assertEqual(["RDDT"], list(portfolio.get_all_stock_ticker_symbols()))
 
+    def test_unrealized_gain_positive(self):
+        portfolio = StockPortfolio()
+        portfolio.add_stock_grant(StockGrant("AAPL", 100, 50.0, 4))
+        collection = list(portfolio.get_all_stock_grant_collections())[0]
+        # 100 shares up $10 each.
+        self.assertAlmostEqual(1000.0, collection.get_unrealized_gain(60.0))
+
+    def test_unrealized_gain_negative(self):
+        portfolio = StockPortfolio()
+        portfolio.add_stock_grant(StockGrant("AAPL", 100, 70.0, 4))
+        collection = list(portfolio.get_all_stock_grant_collections())[0]
+        # 100 shares down $10 each.
+        self.assertAlmostEqual(-1000.0, collection.get_unrealized_gain(60.0))
+
+    def test_unrealized_gain_combines_grants_on_same_row(self):
+        portfolio = StockPortfolio()
+        portfolio.add_stock_grant(StockGrant("RDDT", 357, 216.99, 2))
+        portfolio.add_stock_grant(StockGrant("RDDT", 399, 147.86, 2))
+        collection = list(portfolio.get_all_stock_grant_collections())[0]
+        expected = 357 * (166.56 - 216.99) + 399 * (166.56 - 147.86)
+        self.assertAlmostEqual(expected, collection.get_unrealized_gain(166.56))
+
+    def test_total_portfolio_value_sums_across_tickers(self):
+        portfolio = StockPortfolio()
+        portfolio.add_stock_grant(StockGrant("RDDT", 100, 50.0, 2))
+        portfolio.add_stock_grant(StockGrant("AAPL", 10, 100.0, 4))
+
+        prices = {"RDDT": 166.56, "AAPL": 310.0}
+        expected = 100 * 166.56 + 10 * 310.0
+        self.assertAlmostEqual(expected, portfolio.get_total_portfolio_value(prices))
+
+    def test_total_portfolio_value_skips_unknown_prices(self):
+        portfolio = StockPortfolio()
+        portfolio.add_stock_grant(StockGrant("RDDT", 100, 50.0, 2))
+        portfolio.add_stock_grant(StockGrant("AAPL", 10, 100.0, 4))
+
+        # AAPL has no price yet, so only RDDT counts.
+        prices = {"RDDT": 166.56}
+        self.assertAlmostEqual(100 * 166.56, portfolio.get_total_portfolio_value(prices))
+
+    def test_total_portfolio_value_handles_split_rows(self):
+        portfolio = StockPortfolio()
+        portfolio.add_stock_grant(StockGrant("RDDT", 357, 216.99, 2))
+        portfolio.add_stock_grant(StockGrant("RDDT", 399, 147.86, 2, "b"))
+
+        prices = {"RDDT": 166.56}
+        self.assertAlmostEqual((357 + 399) * 166.56, portfolio.get_total_portfolio_value(prices))
+
+    def test_total_day_change(self):
+        portfolio = StockPortfolio()
+        portfolio.add_stock_grant(StockGrant("RDDT", 100, 50.0, 2))
+        portfolio.add_stock_grant(StockGrant("AAPL", 10, 100.0, 4))
+
+        prices = {"RDDT": 110.0, "AAPL": 90.0}
+        prev_close = {"RDDT": 100.0, "AAPL": 100.0}
+        # RDDT: +$10/share * 100 = +1000; AAPL: -$10/share * 10 = -100
+        self.assertAlmostEqual(900.0, portfolio.get_total_day_change(prices, prev_close))
+
+    def test_total_day_change_skips_missing_previous_close(self):
+        portfolio = StockPortfolio()
+        portfolio.add_stock_grant(StockGrant("RDDT", 100, 50.0, 2))
+
+        prices = {"RDDT": 110.0}
+        self.assertAlmostEqual(0.0, portfolio.get_total_day_change(prices, {}))
+
     def test_next_vest_value_is_scoped_per_row(self):
         # The original bug: two grants with independent schedules incorrectly summed
         # both grants' next vest. Splitting onto separate rows scopes each calculation.

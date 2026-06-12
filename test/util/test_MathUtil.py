@@ -22,6 +22,10 @@ class MathUtilTests(TestCase):
         actual = calculate_percent_change(100, 50)
         self.assertEqual(expected, actual)
 
+    def test_calculate_percent_change_zero_start(self):
+        # A zero baseline must not raise; it falls back to 0% instead of dividing by zero.
+        self.assertEqual(0.0, calculate_percent_change(0, 100))
+
     def test_calculate_grant_percent_change(self):
         current_share_price = 60.00
         grant_price = 50.00

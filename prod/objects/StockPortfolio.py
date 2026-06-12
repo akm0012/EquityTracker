@@ -69,3 +69,31 @@ class StockPortfolio:
             max_grant_count = max(max_grant_count, len(value.stock_grant_list))
 
         return max_grant_count
+
+    """
+    Total current value of every grant across the whole portfolio.
+    `price_by_ticker` maps a ticker to its latest price; tickers without a known price are
+    skipped (e.g. before their first update has arrived).
+    """
+    def get_total_portfolio_value(self, price_by_ticker: dict) -> float:
+        total = 0.0
+        for grant in self.get_all_stock_grants():
+            price = price_by_ticker.get(grant.ticker)
+            if price is None:
+                continue
+            total += grant.count * price
+        return total
+
+    """
+    Total dollar change for the day across the whole portfolio, i.e. the combined gain/loss of
+    every grant versus its previous close. Tickers missing a price or previous close are skipped.
+    """
+    def get_total_day_change(self, price_by_ticker: dict, prev_close_by_ticker: dict) -> float:
+        total = 0.0
+        for grant in self.get_all_stock_grants():
+            price = price_by_ticker.get(grant.ticker)
+            prev_close = prev_close_by_ticker.get(grant.ticker)
+            if price is None or prev_close is None:
+                continue
+            total += grant.count * (price - prev_close)
+        return total

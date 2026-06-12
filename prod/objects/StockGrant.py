@@ -29,7 +29,7 @@ class StockGrant:
     def create_from_config_ini(stock_entry: str):
         components = stock_entry.split(",")
 
-        ticker = components[0]
+        ticker = components[0].strip().upper()
         count = int(components[1])
         price = float(components[2])
         vests_left = int(components[3])

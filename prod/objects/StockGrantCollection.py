@@ -31,6 +31,16 @@ class StockGrantCollection:
         return total
 
     """
+    Unrealized gain/loss for this row: current value minus what the grants were worth at their
+    grant price. Positive means the grants are up since they were granted.
+    """
+    def get_unrealized_gain(self, current_price: float) -> float:
+        gain = 0.0
+        for grant in self.stock_grant_list:
+            gain += grant.count * (current_price - grant.price)
+        return gain
+
+    """
     Value of the next vest for this row only. Grants on separate rows vest on their own
     schedule, so only the grants in this collection are summed.
     """

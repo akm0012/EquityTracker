@@ -7,6 +7,10 @@ IE: 50 -> 100 = 100%
     100 -> 50 = -50% 
 """
 def calculate_percent_change(start: float, end: float) -> float:
+    # Guard against a missing/zero baseline (e.g. a $0.00 previous close) which would
+    # otherwise blow up the UI with a ZeroDivisionError.
+    if start == 0:
+        return 0.0
     difference = end / start
     percent = difference * 100
     percent = percent - 100

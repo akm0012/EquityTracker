@@ -5,7 +5,11 @@ import json
 from prod.objects.LiveStockInfo import LiveStockInfo
 from prod.objects.StockInfo import StockInfo
 from prod.repository.ConfigRepository import ConfigRepository
+from prod.resources import Strings
 from prod.util.LogUtil import log
+
+# Seconds between automatic websocket reconnection attempts.
+RECONNECT_DELAY_SECONDS = 5
 
 
 class UnknownStockError(Exception):
@@ -38,20 +42,29 @@ class ApiService:
 
         return stock_info
 
-    def listen_for_stock_updates(self, ticker_list: [str], yesterday_price_dict: {}, stock_update_callback):
+    def listen_for_stock_updates(self, ticker_list: [str], yesterday_price_dict: {}, stock_update_callback,
+                                 status_callback=None):
         websocket.enableTrace(False)
-        web_socket = websocket.WebSocketApp(f"wss://ws.finnhub.io?token={ConfigRepository().get_finnhub_api_key()}",
-                                            on_open=lambda ws: self.__on_open__(ws, ticker_list),
+        web_socket = websocket.WebSocketApp(f"wss://ws.finnhub.io?token={self.config_repo.get_finnhub_api_key()}",
+                                            on_open=lambda ws: self.__on_open__(ws, ticker_list, status_callback),
                                             on_message=lambda ws, message: self.__on_web_socket_message__(ws, message, yesterday_price_dict, stock_update_callback),
-                                            on_error=lambda ws, error: self.__on_web_socket_error__(ws, error),
-                                            on_close=lambda ws, close_status_code, close_msg: self.__on_close__(ws, close_status_code, close_msg))
+                                            on_error=lambda ws, error: self.__on_web_socket_error__(ws, error, status_callback),
+                                            on_close=lambda ws, close_status_code, close_msg: self.__on_close__(ws, close_status_code, close_msg, status_callback))
 
-        web_socket.run_forever()
+        # reconnect makes run_forever retry automatically instead of returning on a dropped
+        # connection, so an overnight disconnect or flaky network self-heals.
+        web_socket.run_forever(reconnect=RECONNECT_DELAY_SECONDS)
 
     @staticmethod
-    def __on_open__(ws, ticker_list: [str]):
+    def __notify_status__(status_callback, status):
+        if status_callback is not None:
+            status_callback(status)
+
+    @staticmethod
+    def __on_open__(ws, ticker_list: [str], status_callback=None):
         for ticker in ticker_list:
             ws.send(f'{{"type":"subscribe","symbol":"{ticker.upper()}"}}')
+        ApiService.__notify_status__(status_callback, Strings.CONN_STATUS_LIVE)
 
     @staticmethod
     def __on_web_socket_message__(ws, message, yesterday_price_dict, callback):
@@ -69,9 +82,11 @@ class ApiService:
             log("Unable to parse update: " + message)
 
     @staticmethod
-    def __on_web_socket_error__(ws, error):
+    def __on_web_socket_error__(ws, error, status_callback=None):
         log(error)
+        ApiService.__notify_status__(status_callback, Strings.CONN_STATUS_RECONNECTING)
 
     @staticmethod
-    def __on_close__(ws, close_status_code, close_msg):
+    def __on_close__(ws, close_status_code, close_msg, status_callback=None):
         log(f"### closed ### code: {close_status_code} msg: {close_msg}")
+        ApiService.__notify_status__(status_callback, Strings.CONN_STATUS_RECONNECTING)
