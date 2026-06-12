@@ -9,26 +9,45 @@ class StockPortfolio:
     def __init__(self):
         self.stock_grant_collection_dict = {}
 
-    def add_stock_grant(self, stock_grant: StockGrant):
-        ticker = stock_grant.ticker
+    """
+    The key a grant is filed under. Grants with no group label key by ticker (so they all
+    combine onto one row, preserving the original behavior). A group label gives the grant
+    its own row, separate from other grants of the same ticker.
+    """
+    @staticmethod
+    def _row_key(stock_grant: StockGrant) -> str:
+        if stock_grant.group:
+            return f"{stock_grant.ticker}::{stock_grant.group}"
+        return stock_grant.ticker
 
-        # Check if there is already a Stock with that Key
-        if self.stock_grant_collection_dict.keys().__contains__(ticker):
+    def add_stock_grant(self, stock_grant: StockGrant):
+        row_key = self._row_key(stock_grant)
+
+        # Check if there is already a row with that key
+        if self.stock_grant_collection_dict.keys().__contains__(row_key):
             # If so, get the current Stock Grant Collection and add this grant to it
-            existing_stock_grant_collection = self.stock_grant_collection_dict[ticker]
+            existing_stock_grant_collection = self.stock_grant_collection_dict[row_key]
             existing_stock_grant_collection.add_stock_grant(stock_grant)
-            self.stock_grant_collection_dict[ticker] = existing_stock_grant_collection
+            self.stock_grant_collection_dict[row_key] = existing_stock_grant_collection
         else:
             # If not, create a new Stock Grant Collection with the given grant
-            stock_grant_collection = StockGrantCollection(ticker)
+            stock_grant_collection = StockGrantCollection(stock_grant.ticker, stock_grant.group)
             stock_grant_collection.add_stock_grant(stock_grant)
-            self.stock_grant_collection_dict[ticker] = stock_grant_collection
+            self.stock_grant_collection_dict[row_key] = stock_grant_collection
 
     def get_all_stock_grant_collections(self) -> [StockGrantCollection]:
         return self.stock_grant_collection_dict.values()
 
+    """
+    Returns the unique ticker symbols across all rows. Multiple rows can share a ticker
+    (when grants are split onto separate rows), so this de-dupes for price subscriptions.
+    """
     def get_all_stock_ticker_symbols(self) -> [str]:
-        return self.stock_grant_collection_dict.keys()
+        tickers = []
+        for collection in self.stock_grant_collection_dict.values():
+            if collection.ticker not in tickers:
+                tickers.append(collection.ticker)
+        return tickers
 
     def get_stock_grant_collection(self, ticker: str) -> StockGrantCollection:
         # todo: error check
@@ -51,3 +70,30 @@ class StockPortfolio:
 
         return max_grant_count
 
+    """
+    Total current value of every grant across the whole portfolio.
+    `price_by_ticker` maps a ticker to its latest price; tickers without a known price are
+    skipped (e.g. before their first update has arrived).
+    """
+    def get_total_portfolio_value(self, price_by_ticker: dict) -> float:
+        total = 0.0
+        for grant in self.get_all_stock_grants():
+            price = price_by_ticker.get(grant.ticker)
+            if price is None:
+                continue
+            total += grant.count * price
+        return total
+
+    """
+    Total dollar change for the day across the whole portfolio, i.e. the combined gain/loss of
+    every grant versus its previous close. Tickers missing a price or previous close are skipped.
+    """
+    def get_total_day_change(self, price_by_ticker: dict, prev_close_by_ticker: dict) -> float:
+        total = 0.0
+        for grant in self.get_all_stock_grants():
+            price = price_by_ticker.get(grant.ticker)
+            prev_close = prev_close_by_ticker.get(grant.ticker)
+            if price is None or prev_close is None:
+                continue
+            total += grant.count * (price - prev_close)
+        return total

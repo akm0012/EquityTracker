@@ -4,6 +4,7 @@ This class handles all the retrieval of Stock data.
 from prod.network.ApiService import ApiService, UnknownStockError
 from prod.objects.LiveStockInfo import LiveStockInfo
 from prod.objects.StockPortfolio import StockPortfolio
+from prod.resources import Strings
 
 
 class StockRepository:
@@ -16,7 +17,7 @@ class StockRepository:
     def is_finnhub_api_key_valid(self, api_key: str) -> bool:
         try:
             self.api_service.get_stock("AAPL", api_key)
-        except KeyError:
+        except (UnknownStockError, KeyError):
             return False
         return True
 
@@ -32,8 +33,11 @@ class StockRepository:
     It will first get the current price and send that back as an initial update, then socket will take over 
     and will send back updates as they are available. 
     """
-    def listen_for_stock_price_updates(self, ticker_list: [str], price_callback):
-        # Holds all the prices of the previous day for a specific stock. I.E. {TWTR : 35.50}
+    def listen_for_stock_price_updates(self, ticker_list: [str], price_callback, status_callback=None):
+        if status_callback is not None:
+            status_callback(Strings.CONN_STATUS_CONNECTING)
+
+        # Holds all the prices of the previous day for a specific stock. I.E. {AAPL : 35.50}
         yesterday_price_dict = {}
 
         # First, get a starting price for all the tickers interested
@@ -44,7 +48,7 @@ class StockRepository:
             price_callback(LiveStockInfo.map_from_stock_info(stock_info))
 
         # Then listen for live updates.
-        self.api_service.listen_for_stock_updates(ticker_list, yesterday_price_dict, price_callback)
+        self.api_service.listen_for_stock_updates(ticker_list, yesterday_price_dict, price_callback, status_callback)
 
-    def listen_for_portfolio_updates(self, portfolio: StockPortfolio, callback):
-        self.listen_for_stock_price_updates(portfolio.get_all_stock_ticker_symbols(), callback)
+    def listen_for_portfolio_updates(self, portfolio: StockPortfolio, callback, status_callback=None):
+        self.listen_for_stock_price_updates(portfolio.get_all_stock_ticker_symbols(), callback, status_callback)

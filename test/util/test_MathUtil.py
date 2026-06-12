@@ -22,6 +22,10 @@ class MathUtilTests(TestCase):
         actual = calculate_percent_change(100, 50)
         self.assertEqual(expected, actual)
 
+    def test_calculate_percent_change_zero_start(self):
+        # A zero baseline must not raise; it falls back to 0% instead of dividing by zero.
+        self.assertEqual(0.0, calculate_percent_change(0, 100))
+
     def test_calculate_grant_percent_change(self):
         current_share_price = 60.00
         grant_price = 50.00
@@ -69,8 +73,8 @@ class MathUtilTests(TestCase):
     def test_calculate_multi_grant_percent_change(self):
         current_share_price = 60.00
 
-        grant_1 = StockGrant("TWTR", 2000, 50)
-        grant_2 = StockGrant("TWTR", 100, 70)
+        grant_1 = StockGrant("TWTR", 2000, 50, 0)
+        grant_2 = StockGrant("TWTR", 100, 70, 0)
 
         expected = 17.76
         actual = calculate_multi_grant_percent_change(current_share_price, [grant_1, grant_2])
@@ -80,8 +84,8 @@ class MathUtilTests(TestCase):
     def test_calculate_multi_grant_dollar_change(self):
         current_share_price = 60.00
 
-        grant_1 = StockGrant("TWTR", 2000, 50)
-        grant_2 = StockGrant("TWTR", 100, 70)
+        grant_1 = StockGrant("TWTR", 2000, 50, 0)
+        grant_2 = StockGrant("TWTR", 100, 70, 0)
 
         expected = 19000
         actual = calculate_multi_grant_dollar_change(current_share_price, [grant_1, grant_2])
@@ -91,8 +95,8 @@ class MathUtilTests(TestCase):
     def test_calculate_multi_grant_dollar_amount(self):
         current_share_price = 60.00
 
-        grant_1 = StockGrant("TWTR", 2000, 50)
-        grant_2 = StockGrant("TWTR", 100, 70)
+        grant_1 = StockGrant("TWTR", 2000, 50, 0)
+        grant_2 = StockGrant("TWTR", 100, 70, 0)
 
         expected = 126000
         actual = calculate_multi_grant_dollar_amount(current_share_price, [grant_1, grant_2])

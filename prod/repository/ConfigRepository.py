@@ -17,14 +17,47 @@ class ConfigRepository:
 
     config_file_location = ""
 
-    def __init__(self):
-        script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
-        rel_path = "../../config.ini"
-        self.config_file_location = os.path.join(script_dir, rel_path)
+    def __init__(self, config_file_location: str = ""):
+        if config_file_location:
+            self.config_file_location = os.path.abspath(os.path.expanduser(config_file_location))
+        else:
+            script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
+            rel_path = "../../config.ini"
+            self.config_file_location = os.path.join(script_dir, rel_path)
+
+    def __ensure_config_directory(self):
+        config_directory = os.path.dirname(self.config_file_location)
+        if config_directory:
+            os.makedirs(config_directory, exist_ok=True)
 
     def does_config_file_exist(self) -> bool:
         file_exist = exists(self.config_file_location)
         return file_exist
+
+    def get_config_file_location(self) -> str:
+        return self.config_file_location
+
+    def ensure_config_file(self):
+        config = configparser.ConfigParser()
+
+        if self.does_config_file_exist():
+            config.read(self.config_file_location)
+
+        repaired = False
+        if not config.has_section(self.API_TOKENS_SECTION):
+            config.add_section(self.API_TOKENS_SECTION)
+            repaired = True
+        if not config.has_option(self.API_TOKENS_SECTION, self.FINN_HUB_API_KEY):
+            config[self.API_TOKENS_SECTION][self.FINN_HUB_API_KEY] = ""
+            repaired = True
+        if not config.has_section(self.DATABASE_SECTION):
+            config.add_section(self.DATABASE_SECTION)
+            repaired = True
+
+        if repaired or not self.does_config_file_exist():
+            self.__ensure_config_directory()
+            with open(self.config_file_location, 'w') as configfile:
+                config.write(configfile)
 
     def is_config_file_valid(self) -> bool:
         if not self.does_config_file_exist():
@@ -63,6 +96,7 @@ class ConfigRepository:
         config[self.API_TOKENS_SECTION][self.FINN_HUB_API_KEY] = ""
         config.add_section(self.DATABASE_SECTION)
 
+        self.__ensure_config_directory()
         with open(self.config_file_location, 'w') as configfile:
             config.write(configfile)
 
@@ -73,11 +107,13 @@ class ConfigRepository:
         return False
 
     def get_finnhub_api_key(self) -> str:
+        self.ensure_config_file()
         config = configparser.ConfigParser()
         config.read(self.config_file_location)
-        return config.get(self.API_TOKENS_SECTION, self.FINN_HUB_API_KEY)
+        return config.get(self.API_TOKENS_SECTION, self.FINN_HUB_API_KEY, fallback="")
 
     def save_finnhub_api_key(self, api_key: str):
+        self.ensure_config_file()
         config = configparser.ConfigParser()
         config.read(self.config_file_location)
         config[self.API_TOKENS_SECTION][self.FINN_HUB_API_KEY] = api_key
@@ -85,36 +121,49 @@ class ConfigRepository:
             config.write(configfile)
 
     def get_stock_portfolio(self) -> StockPortfolio:
+        portfolio, _errors = self.get_stock_portfolio_with_errors()
+        return portfolio
+
+    def get_stock_portfolio_with_errors(self) -> tuple[StockPortfolio, list[str]]:
+        self.ensure_config_file()
         config = configparser.ConfigParser()
         config.read(self.config_file_location)
 
         database_section = config[self.DATABASE_SECTION]
 
         stock_portfolio = StockPortfolio()
+        errors = []
 
         for stock in database_section:
             stock_ini_str = database_section[stock]
-            stock_grant = StockGrant.create_from_config_ini(stock_ini_str)
-            stock_portfolio.add_stock_grant(stock_grant)
+            try:
+                stock_grant = StockGrant.create_from_config_ini(stock_ini_str)
+                stock_portfolio.add_stock_grant(stock_grant)
+            except (IndexError, ValueError) as error:
+                errors.append(f"{stock} = {stock_ini_str} ({error})")
 
-        return stock_portfolio
+        return stock_portfolio, errors
 
     def clear_stocks(self):
+        self.ensure_config_file()
         config = configparser.ConfigParser()
         config.read(self.config_file_location)
-        config.remove_section(self.DATABASE_SECTION)
+        if config.has_section(self.DATABASE_SECTION):
+            config.remove_section(self.DATABASE_SECTION)
         config.add_section(self.DATABASE_SECTION)
         with open(self.config_file_location, 'w') as configfile:
             config.write(configfile)
 
 
     def save_stock_portfolio(self, portfolio: StockPortfolio):
-        # If the config file is not there, create one
-        if not self.does_config_file_exist():
-            self.create_empty_config_file()
+        self.ensure_config_file()
 
         config = configparser.ConfigParser()
         config.read(self.config_file_location)
+
+        if config.has_section(self.DATABASE_SECTION):
+            config.remove_section(self.DATABASE_SECTION)
+        config.add_section(self.DATABASE_SECTION)
 
         stock_grants = portfolio.get_all_stock_grants()
         for index, grant in enumerate(stock_grants, start=1):
@@ -122,4 +171,3 @@ class ConfigRepository:
 
         with open(self.config_file_location, 'w') as configfile:
             config.write(configfile)
-
