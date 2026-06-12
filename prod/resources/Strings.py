@@ -1,5 +1,6 @@
 HELP_DESC = "This program is a lightweight way to keep an eye on your stock watch list and see how your equity grants " \
             "are performing."
+ARG_CONFIG_HELP = "Use a specific config file path instead of the default project config.ini."
 ARG_TOKEN_HELP = "Sets the Finnhub API token. You can create a free token here: https://finnhub.io/dashboard."
 ARG_RESET_HELP = "Removes all the stocks and equity amounts."
 ARG_NUKE_HELP = "Nuke from orbit. Resets the entire config file. You will lose your API Token and Stock list."

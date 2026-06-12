@@ -72,6 +72,14 @@ class TestConfigRepository(TestCase):
 
     # region ensure_config_file tests
 
+    def test_constructor_accepts_custom_config_path(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_path = os.path.join(temp_dir, "custom.ini")
+
+            config_repo = ConfigRepository(config_path)
+
+            self.assertEqual(config_path, config_repo.get_config_file_location())
+
     def test_ensure_config_file_creates_missing_file(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             config_repo = ConfigRepository()
@@ -82,6 +90,16 @@ class TestConfigRepository(TestCase):
             self.assertTrue(config_repo.does_config_file_exist())
             self.assertTrue(config_repo.is_config_file_valid())
             self.assertEqual("", config_repo.get_finnhub_api_key())
+
+    def test_ensure_config_file_creates_parent_directory_for_custom_path(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_path = os.path.join(temp_dir, "nested", "onboarding.ini")
+            config_repo = ConfigRepository(config_path)
+
+            config_repo.ensure_config_file()
+
+            self.assertTrue(config_repo.does_config_file_exist())
+            self.assertTrue(config_repo.is_config_file_valid())
 
     def test_ensure_config_file_repairs_missing_api_tokens(self):
         with tempfile.TemporaryDirectory() as temp_dir:

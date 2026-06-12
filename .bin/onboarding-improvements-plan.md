@@ -440,7 +440,7 @@ Expected:
 
 ## Future Follow-Ups
 
-- Add `--config PATH` for easier testing and safer local experimentation.
+- Add sample config templates that users can copy when they do not want to use interactive onboarding.
 - Add a non-interactive `--add-stock` or `--add-grant` command for power users.
 - Show a one-time "how to edit config.ini" hint after setup.
 - Add a command to print the current portfolio summary without launching curses.

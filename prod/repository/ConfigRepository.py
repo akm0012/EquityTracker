@@ -17,10 +17,18 @@ class ConfigRepository:
 
     config_file_location = ""
 
-    def __init__(self):
-        script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
-        rel_path = "../../config.ini"
-        self.config_file_location = os.path.join(script_dir, rel_path)
+    def __init__(self, config_file_location: str = ""):
+        if config_file_location:
+            self.config_file_location = os.path.abspath(os.path.expanduser(config_file_location))
+        else:
+            script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
+            rel_path = "../../config.ini"
+            self.config_file_location = os.path.join(script_dir, rel_path)
+
+    def __ensure_config_directory(self):
+        config_directory = os.path.dirname(self.config_file_location)
+        if config_directory:
+            os.makedirs(config_directory, exist_ok=True)
 
     def does_config_file_exist(self) -> bool:
         file_exist = exists(self.config_file_location)
@@ -47,6 +55,7 @@ class ConfigRepository:
             repaired = True
 
         if repaired or not self.does_config_file_exist():
+            self.__ensure_config_directory()
             with open(self.config_file_location, 'w') as configfile:
                 config.write(configfile)
 
@@ -87,6 +96,7 @@ class ConfigRepository:
         config[self.API_TOKENS_SECTION][self.FINN_HUB_API_KEY] = ""
         config.add_section(self.DATABASE_SECTION)
 
+        self.__ensure_config_directory()
         with open(self.config_file_location, 'w') as configfile:
             config.write(configfile)
 

@@ -100,6 +100,7 @@ Available flags:
 
 | Flag | Description |
 | --- | --- |
+| `-c`, `--config` | Use a specific config file path instead of the default `config.ini`. |
 | `-t`, `--Token` | Save your Finnhub API token. |
 | `-r`, `--Reset` | Remove all stocks and equity amounts while keeping your token. |
 | `--NUKE` | Reset the entire config file, including token and stock list. |
@@ -108,6 +109,18 @@ Example token setup:
 
 ```bash
 ./venv/bin/python3 -m prod.Main --Token YOUR_FINNHUB_TOKEN
+```
+
+Test onboarding without touching your real config:
+
+```bash
+./venv/bin/python3 -m prod.Main --config /tmp/equitytracker-onboarding.ini
+```
+
+You can also combine `--config` with one-shot commands:
+
+```bash
+./venv/bin/python3 -m prod.Main --config /tmp/equitytracker-onboarding.ini --Token YOUR_FINNHUB_TOKEN
 ```
 
 ## Config Guide
@@ -247,6 +260,13 @@ Run the tests:
 
 ```bash
 ./venv/bin/python3 -m unittest discover -s test -t .
+```
+
+Manually test first-run onboarding without touching your real `config.ini`:
+
+```bash
+rm -f /tmp/equitytracker-onboarding.ini
+./venv/bin/python3 -m prod.Main --config /tmp/equitytracker-onboarding.ini
 ```
 
 Remove the virtual environment:

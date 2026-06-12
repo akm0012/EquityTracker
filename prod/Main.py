@@ -74,16 +74,23 @@ def safe_addstr(window, y: int, x: int, text: str, attr: int = 0):
         pass
 
 
-def process_arguments():
+def create_argument_parser():
     parser = argparse.ArgumentParser(description=Strings.HELP_DESC)
 
     # Adding optional argument
+    parser.add_argument("-c", "--config", help=Strings.ARG_CONFIG_HELP)
     parser.add_argument("-t", "--Token", help=Strings.ARG_TOKEN_HELP)
     parser.add_argument("-r", "--Reset", action='store_true', help=Strings.ARG_RESET_HELP)
     parser.add_argument("--NUKE", action='store_true', help=Strings.ARG_NUKE_HELP)
 
-    args = parser.parse_args()
+    return parser
 
+
+def parse_arguments(args=None):
+    return create_argument_parser().parse_args(args)
+
+
+def process_arguments(args):
     if args.Token:
         config_repo.save_finnhub_api_key(args.Token)
         print("Finnhub API Token saved.")
@@ -95,6 +102,10 @@ def process_arguments():
         print("Config file blown away and reset.")
 
     return args
+
+
+def should_exit_after_processing_arguments(args) -> bool:
+    return bool(args.Token or args.Reset or args.NUKE)
 
 
 def parse_non_negative_int(raw_value: str) -> int:
@@ -541,14 +552,16 @@ if __name__ == '__main__':
     # Use the terminal's locale so curses can render the unicode gauge/arrow glyphs.
     locale.setlocale(locale.LC_ALL, "")
 
-    config_repo = ConfigRepository()
+    args = parse_arguments()
+
+    config_repo = ConfigRepository(args.config)
     stock_repo = StockRepository(ApiService(config_repo))
 
     config_repo.ensure_config_file()
 
     # Look for command line arguments, if we find any, cancel execution
-    process_arguments()
-    if len(sys.argv) > 1:
+    process_arguments(args)
+    if should_exit_after_processing_arguments(args):
         sys.exit()
 
     portfolio, parse_errors = config_repo.get_stock_portfolio_with_errors()

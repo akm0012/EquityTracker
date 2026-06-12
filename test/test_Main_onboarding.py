@@ -2,13 +2,31 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from prod.Main import get_grant_group_from_user, get_stock_grants_from_user, normalize_optional_group, \
-    parse_non_negative_int, parse_positive_float, prompt_user_yes_or_no, render_portfolio_summary
+    parse_arguments, parse_non_negative_int, parse_positive_float, prompt_user_yes_or_no, render_portfolio_summary, \
+    should_exit_after_processing_arguments
 from prod.objects.StockGrant import StockGrant
 from prod.objects.StockPortfolio import StockPortfolio
 from prod.resources import Strings
 
 
 class MainOnboardingTests(TestCase):
+
+    # region parse_arguments
+
+    def test_parse_arguments_accepts_custom_config_path(self):
+        args = parse_arguments(["--config", "/tmp/equitytracker-test.ini"])
+
+        self.assertEqual("/tmp/equitytracker-test.ini", args.config)
+        self.assertFalse(should_exit_after_processing_arguments(args))
+
+    def test_parse_arguments_token_exits_after_processing(self):
+        args = parse_arguments(["--config", "/tmp/equitytracker-test.ini", "--Token", "abc123"])
+
+        self.assertEqual("/tmp/equitytracker-test.ini", args.config)
+        self.assertEqual("abc123", args.Token)
+        self.assertTrue(should_exit_after_processing_arguments(args))
+
+    # endregion
 
     # region parse_non_negative_int
 
