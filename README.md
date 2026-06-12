@@ -19,7 +19,7 @@ Use it when you want a lightweight way to watch:
 
 ### Equity grant tracking
 
-![Equity grant tracking](img1.svg)
+<img width="913" height="178" alt="image" src="https://github.com/user-attachments/assets/85ac9946-6717-4d0b-a329-6e0eedc460a0" />
 
 ## Features
 
