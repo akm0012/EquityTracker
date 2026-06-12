@@ -15,11 +15,11 @@ Use it when you want a lightweight way to watch:
 
 ### Watch-only stock monitoring
 
-![Simple stock monitoring](img2.png)
+![Simple stock monitoring](img2.svg)
 
 ### Equity grant tracking
 
-![Equity grant tracking](img1.png)
+![Equity grant tracking](img1.svg)
 
 ## Features
 
@@ -63,7 +63,7 @@ Dependencies are listed in `requirements.txt` and installed automatically by `ma
    The app will ask for:
 
    - Your Finnhub API token.
-   - A stock ticker, such as `AAPL`.
+   - A stock ticker, such as `MSFT`.
    - The number of shares in a grant, or `0` for watch-only.
    - Grant price and vests left, only when shares are greater than `0`.
    - An optional group label for grants that should render on separate rows.
@@ -119,10 +119,10 @@ The app stores setup in `config.ini` at the project root:
 finn_hub_api_key = API_TOKEN_HERE
 
 [DATABASE]
-stock_1 = AAPL,100,150.00,4
-stock_2 = RDDT,357,216.99,2,a
-stock_3 = RDDT,399,147.86,2,b
-stock_4 = SPY,0,0,0
+stock_1 = MSFT,25,100.00,4
+stock_2 = NVDA,10,500.00,4,a
+stock_3 = NVDA,8,600.00,4,b
+stock_4 = VOO,0,0,0
 ```
 
 Each stock row is:
@@ -133,7 +133,7 @@ TICKER,SHARES,GRANT_PRICE,VESTS_LEFT[,GROUP]
 
 | Field | Meaning |
 | --- | --- |
-| `TICKER` | Public ticker symbol, such as `AAPL`. |
+| `TICKER` | Public ticker symbol, such as `MSFT`. |
 | `SHARES` | Shares in this grant. Use `0` for watch-only stocks. |
 | `GRANT_PRICE` | Price per share when the grant was issued. Use `0` for watch-only stocks. |
 | `VESTS_LEFT` | Remaining vest events. Used to estimate the next vest. Use `0` for watch-only stocks. |
@@ -144,25 +144,25 @@ TICKER,SHARES,GRANT_PRICE,VESTS_LEFT[,GROUP]
 Use `0,0,0` after the ticker:
 
 ```ini
-stock_1 = SPY,0,0,0
-stock_2 = RIVN,0,0,0
+stock_1 = VOO,0,0,0
+stock_2 = QQQ,0,0,0
 ```
 
 ### A Single Grant
 
 ```ini
-stock_1 = AAPL,100,150.00,4
+stock_1 = MSFT,25,100.00,4
 ```
 
-This means 100 shares of `AAPL`, granted at `$150.00`, with 4 vest events left.
+This means 25 shares of `MSFT`, granted at `$100.00`, with 4 vest events left.
 
 ### Multiple Grants For The Same Ticker
 
 By default, same-ticker grants without a group label combine onto one row:
 
 ```ini
-stock_1 = AAPL,100,150.00,4
-stock_2 = AAPL,50,175.00,2
+stock_1 = MSFT,25,100.00,4
+stock_2 = MSFT,15,120.00,2
 ```
 
 This is useful when the grants vest on the same schedule or when one combined row is good enough.
@@ -172,8 +172,8 @@ This is useful when the grants vest on the same schedule or when one combined ro
 If same-ticker grants vest independently, add a group label as the fifth field:
 
 ```ini
-stock_1 = RDDT,357,216.99,2,a
-stock_2 = RDDT,399,147.86,2,b
+stock_1 = NVDA,10,500.00,4,a
+stock_2 = NVDA,8,600.00,4,b
 ```
 
 Those rows render separately, so each row's total and next-vest estimate is calculated independently.
@@ -185,9 +185,9 @@ Each stock gets its own row. Reading left to right:
 
 ```text
         Current          Grant 1             Grant 2             Total                       Day Range                   Gain/Loss
-RDDT    $166.56 (-1.52 %) $59,461.92 (-23%)  $66,457.44 (12%)    $125,919.36 ($62,959.68)    $160.12 ▕────●─────▏ $171.40  ▼ $36,801.76
+MSFT    $120.00 (5.26 %)  $3,000.00 (20%)    $1,800.00 (0%)      $4,800.00 ($1,650.00)       $110.00 ▕─────●────▏ $125.00  ▲ $500.00
 
-Portfolio: $179,720.36  (+$3,410.22 today)
+Portfolio: $4,800.00  (+$240.00 today)
 ● live
 ```
 

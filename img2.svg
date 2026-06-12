@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="260" viewBox="0 0 360 260" role="img" aria-labelledby="title desc">
+  <title id="title">Watch-only stock monitoring example</title>
+  <desc id="desc">Sanitized terminal screenshot showing sample watch-only stock prices.</desc>
+  <rect width="360" height="260" fill="#2b0f2f"/>
+  <g font-family="Menlo, Monaco, Consolas, 'Liberation Mono', monospace" font-size="18" dominant-baseline="text-before-edge">
+    <text x="16" y="16" fill="#d8c7df">        <tspan text-decoration="underline">Current</tspan></text>
+    <text x="16" y="50" fill="#d8c7df">MSFT    $120.00 <tspan fill="#1ee83f">(5.26 %)</tspan></text>
+    <text x="16" y="84" fill="#d8c7df">NVDA    $600.00 <tspan fill="#1ee83f">(1.69 %)</tspan></text>
+    <text x="16" y="118" fill="#d8c7df">VOO     $450.00 <tspan fill="#1ee83f">(0.45 %)</tspan></text>
+    <text x="16" y="152" fill="#d8c7df">QQQ     $380.00 <tspan fill="#e04b4b">(-0.78 %)</tspan></text>
+    <text x="16" y="186" fill="#d8c7df">DIA     $390.00 <tspan fill="#1ee83f">(0.31 %)</tspan></text>
+    <text x="16" y="220" fill="#1ee83f">● live</text>
+  </g>
+</svg>

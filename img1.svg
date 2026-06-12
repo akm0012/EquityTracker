@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="190" viewBox="0 0 1120 190" role="img" aria-labelledby="title desc">
+  <title id="title">Equity grant tracking example</title>
+  <desc id="desc">Sanitized terminal screenshot showing sample stock and equity grant values.</desc>
+  <rect width="1120" height="190" fill="#2b0f2f"/>
+  <g font-family="Menlo, Monaco, Consolas, 'Liberation Mono', monospace" font-size="18" dominant-baseline="text-before-edge">
+    <text x="16" y="16" fill="#d8c7df">        <tspan text-decoration="underline">Current</tspan>          <tspan text-decoration="underline">Grant 1</tspan>             <tspan text-decoration="underline">Grant 2</tspan>             <tspan text-decoration="underline">Total</tspan>                 <tspan text-decoration="underline">Day Range</tspan>                   <tspan text-decoration="underline">Gain/Loss</tspan></text>
+    <text x="16" y="50" fill="#d8c7df">MSFT    $120.00 <tspan fill="#1ee83f">(5.26 %)</tspan>  $3,000.00 <tspan fill="#1ee83f">(20 %)</tspan>    $1,800.00 <tspan fill="#d8c7df">(0 %)</tspan>      $4,800.00 ($1,650.00) $110.00 ▕─────●────▏ $125.00  <tspan fill="#1ee83f">▲ $500.00</tspan></text>
+    <text x="16" y="84" fill="#d8c7df">NVDA    $600.00 <tspan fill="#1ee83f">(1.69 %)</tspan>  $6,000.00 <tspan fill="#1ee83f">(20 %)</tspan>                          $6,000.00 ($1,500.00) $580.00 ▕───●──────▏ $620.00  <tspan fill="#1ee83f">▲ $1,000.00</tspan></text>
+    <text x="16" y="118" fill="#d8c7df">VOO     $450.00 <tspan fill="#1ee83f">(0.45 %)</tspan></text>
+    <text x="16" y="152" fill="#d8c7df">Portfolio: $10,800.00  <tspan fill="#1ee83f">+$640.00 today</tspan>    <tspan fill="#1ee83f">● live</tspan></text>
+  </g>
+</svg>
